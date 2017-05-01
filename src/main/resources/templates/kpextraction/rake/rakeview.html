@@ -1,0 +1,20 @@
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>Rake KE</title>
+</head>
+<body>
+	<h1 layout:fragment="header">Keyphrase Algorithm : RAKE</h1>
+	<div layout:fragment="content" class="container">
+	<h1>Form</h1>
+    <form action="#" th:action="@{/kpextraction/rake}" th:object="${textbody}" method="post">
+        <p>Input Text: <input type="text" th:field="*{text}" /></p>
+        <p>Keyphrase number: <input type="text" th:field="*{numKeywords}" /></p>
+        <p><input type="submit" value="Submit" /> </p>
+    </form>
+	</div>
+	
+	
+</body>
+</html>
