@@ -2,7 +2,6 @@ package de.rwth.i9.cimt.ke.configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -27,12 +26,6 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 public class AppConfig {
 	private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
-	private @Value("${cimt.home}") String cimtHome;
-	private @Value("${cimt.wikipedia.sql.host}") String wikipediaSqlHost;
-	private @Value("${cimt.wikipedia.sql.database}") String wikipediaSqlDatabase;
-	private @Value("${cimt.wikipedia.sql.user}") String wikipediaSqlUser;
-	private @Value("${cimt.wikipedia.sql.password}") String wikipediaSqlPassword;
-	private @Value("${cimt.wikipedia.language}") String wikipediaSqlLanguage;
 
 	@Bean
 	public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
@@ -46,9 +39,9 @@ public class AppConfig {
 	}
 
 	private ApiInfo apiInfo() {
-		return new ApiInfoBuilder().title("Semantic Keyterm Extraction Toolkit - SKET API")
+		return new ApiInfoBuilder().title("CIMT - Keyphrase Extraction Toolkit API")
 				.description("Rest API can be used to extract keyphrases/keywords")
-				.contact("Ravi" + " https://learntech.rwth-aachen.de/" + " ravi.singh@rwth-aachen.de")
+				.contact("Ravi Kumar Singh" + "   https://learntech.rwth-aachen.de/" + "   ravi.singh@rwth-aachen.de")
 				.license("Apache License Version 2.0")
 				.licenseUrl("https://github.com/springfox/springfox/blob/master/LICENSE").version("1.0").build();
 	}
