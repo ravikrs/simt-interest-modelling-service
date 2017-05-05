@@ -1,0 +1,55 @@
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>CIMT Keyphrase Extraction</title>
+<link rel="stylesheet" th:href="@{/css/jqcloud.min.css}"
+	href="../../css/jqcloud.min.css" />
+</head>
+<body>
+	<h1 layout:fragment="header">Keyphrase Extraction</h1>
+	<div layout:fragment="content" class="container">
+		<h1>Form</h1>
+		<form action="#" th:action="@{/}" th:object="${textbody}"
+			method="post">
+			<p>
+				Input Text: <input type="text" th:field="*{text}" />
+			</p>
+			<p>
+				Keyphrase number: <input type="text" th:field="*{numKeywords}" />
+			</p>
+			<p>
+				Algorithm Name: <input type="text" th:field="*{algorithmName}" />
+			</p>
+			<p>
+				<input type="submit" value="Submit" />
+			</p>
+		</form>
+		<div id="demo" style="height: 300px;"></div>
+		<table>
+			<tr>
+				<th>keyword</th>
+				<th>score</th>
+			</tr>
+			<tr th:each="keyword : ${keywords}">
+				<td th:text="${keyword.token}">Onions</td>
+				<td th:text="${keyword.weight}">2.41</td>
+			</tr>
+		</table>
+	</div>
+	<h1 layout:fragment="header">Keyphrase Extraction</h1>
+	<th:block layout:fragment="script">
+		<script type="text/javascript" th:src="@{/js/jquery-3.2.1.min.js}" src="../static/js/jquery-3.2.1.min.js" />
+		<script type="text/javascript" th:src="@{/js/jqcloud.min.js}" src="../static/js/jqcloud.js" />
+		<script th:inline="javascript">
+		/*<![CDATA[*/
+		    var words = /*[[${words}]]*/ [];
+		/*]]>*/
+		  $('#demo').jQCloud(JSON.parse(words));
+		</script>
+
+	</th:block>
+
+</body>
+
+</html>

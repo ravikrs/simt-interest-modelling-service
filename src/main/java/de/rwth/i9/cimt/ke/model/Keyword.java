@@ -3,47 +3,38 @@ package de.rwth.i9.cimt.ke.model;
 import java.util.Comparator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Keyword implements Comparable<Keyword> {
-	private String keyword;
-	private double score;
+	private String token;
+	private double weight;
 
 	public Keyword(String keyword, double score) {
-		this.keyword = keyword;
-		this.score = score;
+		this.token = keyword;
+		this.weight = score;
 	}
 
-	public Keyword() {
+	@JsonProperty("text")
+	public String getToken() {
+		return token;
 	}
 
-	public String getKeyword() {
-		return keyword;
-	}
-
-	public void setKeyword(String keyword) {
-		this.keyword = keyword;
-	}
-
-	public double getScore() {
-		return score;
-	}
-
-	public void setScore(double score) {
-		this.score = score;
+	@JsonProperty("weight")
+	public double getWeight() {
+		return weight;
 	}
 
 	public static Comparator<Keyword> KeywordComparatorAsc = new Comparator<Keyword>() {
-
+		@Override
 		public int compare(Keyword keyword1, Keyword keyword2) {
 			return keyword1.compareTo(keyword2);
 		}
 
 	};
 	public static Comparator<Keyword> KeywordComparatorDesc = new Comparator<Keyword>() {
-
+		@Override
 		public int compare(Keyword keyword1, Keyword keyword2) {
-			// return this.quantity - compareQuantity;
 			return keyword2.compareTo(keyword1);
 		}
 
@@ -51,20 +42,19 @@ public class Keyword implements Comparable<Keyword> {
 
 	@Override
 	public int compareTo(Keyword o) {
-		// TODO Auto-generated method stub
-		if (this.score < o.getScore())
+		if (this.weight < o.getWeight())
 			return -1;
-		else if (this.score > o.getScore())
+		else if (this.weight > o.getWeight())
 			return 1;
 		else
-			return this.keyword.compareTo(o.getKeyword());
+			return this.token.compareTo(o.getToken());
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof Keyword) {
 			Keyword that = (Keyword) obj;
-			if ((this.score == that.getScore()) && this.getKeyword().equals(that.getKeyword()))
+			if ((this.weight == that.getWeight()) && this.getToken().equals(that.getToken()))
 				return true;
 		}
 		return false;

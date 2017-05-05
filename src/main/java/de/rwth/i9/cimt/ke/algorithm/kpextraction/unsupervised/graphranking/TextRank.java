@@ -32,9 +32,9 @@ public class TextRank {
 	 *            nlp implementation used for sentence detection
 	 */
 	public static List<Keyword> performTextRankKE(String textContent, final NLP nlpImpl) {
-		Graph<String, DefaultEdge> textRankGraph = new SimpleGraph<String, DefaultEdge>(DefaultEdge.class);
-		List<String> tokenVertices = new ArrayList<String>();
-		List<Keyword> returnedKeyphrases = new ArrayList<Keyword>();
+		Graph<String, DefaultEdge> textRankGraph = new SimpleGraph<>(DefaultEdge.class);
+		List<String> tokenVertices = new ArrayList<>();
+		List<Keyword> returnedKeyphrases = new ArrayList<>();
 		List<String> sentencesList = Arrays.asList(nlpImpl.detectSentences(textContent));
 
 		Map<Integer, String> sentenceListMap = IntStream.range(0, sentencesList.size()).boxed()
@@ -115,7 +115,6 @@ public class TextRank {
 			returnedKeyphrases.add(new Keyword(keywordString, prScoreMap.get(keywordString).doubleValue()));
 		}
 		Collections.sort(returnedKeyphrases, Keyword.KeywordComparatorDesc);
-		returnedKeyphrases.forEach(k -> log.info(k.getKeyword() + k.getScore()));
 		return returnedKeyphrases;
 
 	}

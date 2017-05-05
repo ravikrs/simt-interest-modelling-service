@@ -36,14 +36,14 @@ public class TopicRank {
 	 *            nlp implementation used for sentence detection
 	 */
 	public static List<Keyword> performTopicRankKE(String textContent, final NLP nlpImpl) {
-		SimpleWeightedGraph<Cluster, DefaultWeightedEdge> topicRankGraph = new SimpleWeightedGraph<Cluster, DefaultWeightedEdge>(
+		SimpleWeightedGraph<Cluster, DefaultWeightedEdge> topicRankGraph = new SimpleWeightedGraph<>(
 				DefaultWeightedEdge.class);
-		List<Cluster> tokenVertices = new ArrayList<Cluster>();
-		Map<Cluster, String> clusterStringMap = new HashMap<Cluster, String>();
-		List<Keyword> returnedKeyphrases = new ArrayList<Keyword>();
+		List<Cluster> tokenVertices = new ArrayList<>();
+		Map<Cluster, String> clusterStringMap = new HashMap<>();
+		List<Keyword> returnedKeyphrases = new ArrayList<>();
 
 		Map<String, List<Integer>> tokenOffsetPostionMap = getNounAdjSeqToken(textContent, nlpImpl);
-		List<String> nounAdjTokens = new ArrayList<String>(tokenOffsetPostionMap.keySet());
+		List<String> nounAdjTokens = new ArrayList<>(tokenOffsetPostionMap.keySet());
 
 		List<Cluster> clusters = performClustering(nounAdjTokens);
 		for (Cluster cluster : clusters) {
@@ -60,10 +60,9 @@ public class TopicRank {
 			}
 		}
 
-		PageRank<Cluster, DefaultWeightedEdge> pr = new PageRank<Cluster, DefaultWeightedEdge>(topicRankGraph);
+		PageRank<Cluster, DefaultWeightedEdge> pr = new PageRank<>(topicRankGraph);
 		Map<Cluster, Double> score = pr.getScores();
 		for (Entry<Cluster, Double> entry : score.entrySet()) {
-			System.out.println(clusterStringMap.get(entry.getKey()) + " " + entry.getValue());
 			String[] candidates = clusterStringMap.get(entry.getKey()).split(",");
 			String firstOccurredCandidate = "";
 			int minOffset = Integer.MAX_VALUE;
@@ -78,7 +77,6 @@ public class TopicRank {
 			returnedKeyphrases.add(new Keyword(firstOccurredCandidate, entry.getValue()));
 		}
 		Collections.sort(returnedKeyphrases, Keyword.KeywordComparatorDesc);
-		returnedKeyphrases.forEach(k -> log.info(k.getKeyword() + k.getScore()));
 
 		return returnedKeyphrases;
 
@@ -188,11 +186,6 @@ public class TopicRank {
 		String[] clusterNames = nounAdjTokens.toArray(new String[nounAdjTokens.size()]);
 
 		List<Cluster> clusters = alg.performFlatClustering(distances, clusterNames, new AverageLinkageStrategy(), 0.75);
-
-		for (Cluster c : clusters) {
-			System.out.println(c.toString());
-			System.out.println(c.getChildren());
-		}
 		return clusters;
 	}
 

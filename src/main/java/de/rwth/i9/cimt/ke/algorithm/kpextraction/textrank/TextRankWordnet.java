@@ -446,9 +446,7 @@ public class TextRankWordnet implements Callable<Collection<MetricVector>> {
 		logger.info("\n" + tr);
 
 		for (MetricVector mv : answer) {
-			Keyword keyword = new Keyword();
-			keyword.setKeyword(mv.value.text);
-			keyword.setScore(mv.metric);
+			Keyword keyword = new Keyword(mv.value.text, mv.metric);
 			keywords.add(keyword);
 		}
 		return keywords;

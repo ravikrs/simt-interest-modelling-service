@@ -27,52 +27,50 @@ public class JATEKPExtraction {
 		try {
 			List<JATETerm> terms = new ArrayList<JATETerm>();
 			switch (algorithmName) {
-			case "TTF":
+			case "JATE_TTF":
 				terms = Jate.TTFAlgo(textbody, cimtHome);
 				break;
 
-			case "ATTF":
+			case "JATE_ATTF":
 				terms = Jate.ATTFAlgo(textbody, cimtHome);
 				break;
 
-			case "TFIDF":
+			case "JATE_TFIDF":
 				terms = Jate.TFIDFAlgo(textbody, cimtHome);
 				break;
 
-			case "RIDF":
+			case "JATE_RIDF":
 				terms = Jate.RIDFAlgo(textbody, cimtHome);
 				break;
 
-			case "CValue":
+			case "JATE_CVALUE":
 				terms = Jate.CValueAlgo(textbody, cimtHome);
 				break;
 
-			case "ChiSquare":
+			case "JATE_CHISQUARE":
 				terms = Jate.ChiSquareAlgo(textbody, cimtHome);
 				break;
 
-			case "RAKE":
+			case "JATE_RAKE":
 				terms = Jate.RAKEAlgo(textbody, cimtHome);
 				break;
 
-			case "Weirdness":
+			case "JATE_WEIRDNESS":
 				terms = Jate.WeirdnessAlgo(textbody, cimtHome);
 				break;
 
-			case "GlossEx":
+			case "JATE_GLOSSEX":
 				terms = Jate.GlossExAlgo(textbody, cimtHome);
 				break;
 
-			case "TermEx":
+			case "JATE_TERMEX":
 				terms = Jate.TermExAlgo(textbody, cimtHome);
 				break;
 			default:
 				break;
 			}
 			for (JATETerm term : terms) {
-				Keyword keyword = new Keyword();
-				keyword.setKeyword(term.getString());
-				keyword.setScore(term.getScore());
+				Keyword keyword = new Keyword(term.getString(), term.getScore());
 				keywords.add(keyword);
 				if (++keywordCount > numKeywords)
 					break;

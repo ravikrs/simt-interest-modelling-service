@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"
 	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout">
 <head>
-<title>Layout</title>
+<title>Keyphrase Extraction</title>
 <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}"
 	href="../../css/bootstrap.min.css" />
 
@@ -12,8 +12,8 @@
 		<div class="navbar">
 			<div class="navbar-inner">
 				<a class="brand"
-					href="#">
-					CIMT </a>
+					th:href="@{/}" href="home.html">
+					CIMT - KE </a>
 				<ul class="nav">
 					<li><a th:href="@{/kpextraction/rake}" href="rake.html"> RAKE </a></li>
 					<li><a th:href="@{/kpextraction/jate}" href="jate.html"> JATE </a></li>
@@ -28,5 +28,6 @@
 		<h1 layout:fragment="header">Layout</h1>
 		<div layout:fragment="content">Fake content</div>
 	</div>
+	<th:block layout:fragment="script"></th:block>
 </body>
 </html>

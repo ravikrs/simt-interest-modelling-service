@@ -55,9 +55,7 @@ public class Rake {
 		ex.runAlgorithm();
 		List<Term> terms = doc.getTermList();
 		for (Term term : terms) {
-			Keyword keyword = new Keyword();
-			keyword.setKeyword(term.getTerm());
-			keyword.setScore(term.getScore());
+			Keyword keyword = new Keyword(term.getTerm(), term.getScore());
 			keywords.add(keyword);
 		}
 		log.info("RAKE Algorithm");
