@@ -20,6 +20,7 @@ import org.springframework.web.servlet.ModelAndView;
 import de.rwth.i9.cimt.ke.model.Keyword;
 import de.rwth.i9.cimt.ke.model.Textbody;
 import de.rwth.i9.cimt.ke.service.KPExtraction;
+import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
 
 @Configuration
 @RestController
@@ -28,6 +29,8 @@ public class HomeController {
 	private static final Logger log = LoggerFactory.getLogger(HomeController.class);
 	@Autowired
 	KPExtraction kpExtraction;
+	@Autowired
+	TopicalPageRankKPExtraction topicalPageRankKPExtraction;
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView getKE(Model model) {
@@ -71,4 +74,5 @@ public class HomeController {
 		}
 		return kpExtraction.extractKeyword(textbody.getText(), textbody.getAlgorithmName(), numKeywords);
 	}
+
 }

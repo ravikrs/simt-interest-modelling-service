@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -108,9 +107,9 @@ public class KeyCluster {
 			}
 			iter++;
 		}
-		for (Entry<Integer, List<String>> entry : clusterIdTokensMap.entrySet()) {
-			System.out.println(entry.getKey() + " -> " + entry.getValue());
-		}
+		//		for (Entry<Integer, List<String>> entry : clusterIdTokensMap.entrySet()) {
+		//			System.out.println(entry.getKey() + " -> " + entry.getValue());
+		//		}
 		Map<String, List<Integer>> tokenOffsetPostionMap = getNounAdjSeqToken(textContent, nlp);
 		List<String> nounAdjTokens = new ArrayList<>(tokenOffsetPostionMap.keySet());
 		for (String nounAdjToken : nounAdjTokens) {
@@ -123,8 +122,7 @@ public class KeyCluster {
 
 			}
 			if (score > 0) {
-				score = (score * tokenOffsetPostionMap.get(nounAdjToken).size() * splittokens.length)
-						/ clusteredTokens.size();
+				score = (score * splittokens.length) / clusteredTokens.size();
 				returnedKeywords.add(new Keyword(nounAdjToken, score));
 			}
 

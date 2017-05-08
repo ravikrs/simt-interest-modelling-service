@@ -6,9 +6,9 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.unsupervised.graphranking.TextRank;
 import de.rwth.i9.cimt.ke.algorithm.kpextraction.unsupervised.topicclustering.TopicalPageRank;
 import de.rwth.i9.cimt.ke.model.Keyword;
 import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImpl;
@@ -19,27 +19,20 @@ public class TopicalPageRankKPExtraction {
 	@Autowired
 	OpenNLPImpl openNLPImpl;
 
-	public List<Keyword> extractKeywordTR(String textbody, int numKeywords) {
-		List<Keyword> keywords = new ArrayList<Keyword>();
-		int iter = 0;
-		for (Keyword keyword : TextRank.performTextRankKE(textbody, openNLPImpl)) {
-			if (iter == numKeywords) {
-				break;
-			}
-			keywords.add(keyword);
-		}
-		log.info("TopicalPageRank KeyphraseExtraction");
-		return keywords;
-	}
+	@Autowired
+	private Environment env;
 
 	public List<Keyword> extractKeywordTPR(String textbody, int numKeywords) {
-		List<Keyword> keywords = new ArrayList<Keyword>();
+		List<Keyword> keywords = new ArrayList<>();
 		int iter = 0;
-		for (Keyword keyword : TopicalPageRank.performTopicalPageRankKE(textbody, openNLPImpl)) {
+		List<Keyword> allKeywords = TopicalPageRank.performTopicalPageRankKE(textbody, openNLPImpl,
+				env.getProperty("cimt.home"));
+		for (Keyword keyword : allKeywords) {
 			if (iter == numKeywords) {
 				break;
 			}
 			keywords.add(keyword);
+			iter++;
 		}
 		return keywords;
 	}

@@ -19,28 +19,35 @@
 				Keyphrase number: <input type="text" th:field="*{numKeywords}" />
 			</p>
 			<p>
-				Algorithm Name: <input type="text" th:field="*{algorithmName}" />
-			</p>
+				Algorithm Name: 
+			<select id="algorithmName" name="algorithmName" th:field="*{algorithmName}">
+				<option th:each="algorithm : ${T(de.rwth.i9.cimt.ke.constants.KeyphraseExtractionAlgorithm).values()}"
+					th:value="${algorithm}" th:text="${algorithm}"></option>
+			</select></p>
 			<p>
 				<input type="submit" value="Submit" />
 			</p>
 		</form>
 		<div id="demo" style="height: 300px;"></div>
-		<table>
-			<tr>
-				<th>keyword</th>
-				<th>score</th>
-			</tr>
-			<tr th:each="keyword : ${keywords}">
-				<td th:text="${keyword.token}">Onions</td>
-				<td th:text="${keyword.weight}">2.41</td>
-			</tr>
-		</table>
+		<div th:if="${keywords} != null">
+			<table align="center">
+				<tr>
+					<th>KEYWORD</th>
+					<th>WEIGHT</th>
+				</tr>
+				<tr th:each="keyword : ${keywords}">
+					<td th:text="${keyword.token}">Onions</td>
+					<td th:text="${keyword.weight}">2.41</td>
+				</tr>
+			</table>
+		</div>
 	</div>
 	<h1 layout:fragment="header">Keyphrase Extraction</h1>
 	<th:block layout:fragment="script">
-		<script type="text/javascript" th:src="@{/js/jquery-3.2.1.min.js}" src="../static/js/jquery-3.2.1.min.js" />
-		<script type="text/javascript" th:src="@{/js/jqcloud.min.js}" src="../static/js/jqcloud.js" />
+		<script type="text/javascript" th:src="@{/js/jquery-3.2.1.min.js}"
+			src="../static/js/jquery-3.2.1.min.js" />
+		<script type="text/javascript" th:src="@{/js/jqcloud.min.js}"
+			src="../static/js/jqcloud.js" />
 		<script th:inline="javascript">
 		/*<![CDATA[*/
 		    var words = /*[[${words}]]*/ [];
