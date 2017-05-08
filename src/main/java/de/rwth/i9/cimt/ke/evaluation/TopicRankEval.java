@@ -1,6 +1,6 @@
 package de.rwth.i9.cimt.ke.evaluation;
 
-public class TopicRank {
+public class TopicRankEval {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 

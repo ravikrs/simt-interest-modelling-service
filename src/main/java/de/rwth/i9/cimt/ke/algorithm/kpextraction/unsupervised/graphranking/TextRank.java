@@ -37,9 +37,10 @@ public class TextRank {
 		List<Keyword> returnedKeyphrases = new ArrayList<>();
 		List<String> sentencesList = Arrays.asList(nlpImpl.detectSentences(textContent));
 
+		// stores sentences in sequence. <1, This is first sentence>, <2, This is second sentence>....
 		Map<Integer, String> sentenceListMap = IntStream.range(0, sentencesList.size()).boxed()
 				.collect(Collectors.toMap(Function.identity(), i -> sentencesList.get(i)));
-
+		// stores sentences in sequence with tokens of each sentence. <1, [This, is, first, sentence]>, <2, [This, is, second, sentence]>....
 		Map<Integer, List<String>> sentenceIndexTokenListMap = sentenceListMap.entrySet().stream().collect(
 				Collectors.toMap(e -> e.getKey(), e -> (List<String>) Arrays.asList(nlpImpl.tokenize(e.getValue()))
 						.stream().map(token -> token.trim().toLowerCase()).collect(Collectors.toList())));

@@ -38,8 +38,8 @@ public class KPExtraction {
 		KeyphraseExtractionAlgorithm algorithm = KeyphraseExtractionAlgorithm.fromString(algorithmName);
 		List<Keyword> keyphrases = new ArrayList<>();
 		switch (algorithm) {
-		case COMMUNITY_CLUSTER:
-			keyphrases = communityClusterKPExtraction.extractKeyword(textbody, numKeywords);
+		case KEY_CLUSTER:
+			keyphrases = keyClusterKPExtraction.extractKeyword(textbody, numKeywords);
 			break;
 		case DEFAULT:
 			keyphrases = textRankKPExtraction.extractKeywordTextRankWordnet(textbody, numKeywords);

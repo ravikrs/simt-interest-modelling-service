@@ -24,8 +24,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @PropertySource("classpath:opennlp.properties")
 @Lazy(true)
 @EnableSwagger2
-public class AppConfig {
-	private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
+public class AppConfigKE {
+	private static final Logger log = LoggerFactory.getLogger(AppConfigKE.class);
 
 	@Bean
 	public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {

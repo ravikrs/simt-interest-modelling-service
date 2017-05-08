@@ -1,7 +1,7 @@
 package de.rwth.i9.cimt.ke.constants;
 
 public enum KeyphraseExtractionAlgorithm {
-	JATE_TTF, JATE_ATTF, JATE_TFIDF, JATE_RIDF, JATE_CVALUE, JATE_CHISQUARE, JATE_RAKE, JATE_WEIRDNESS, JATE_GLOSSEX, JATE_TERMEX, RAKE, TEXT_RANK, TEXT_RANK_WORDNET, TOPIC_RANK, TOPICAL_PAGE_RANK, COMMUNITY_CLUSTER, DEFAULT;
+	JATE_TTF, JATE_ATTF, JATE_TFIDF, JATE_RIDF, JATE_CVALUE, JATE_CHISQUARE, JATE_RAKE, JATE_WEIRDNESS, JATE_GLOSSEX, JATE_TERMEX, RAKE, TEXT_RANK, TEXT_RANK_WORDNET, TOPIC_RANK, TOPICAL_PAGE_RANK, KEY_CLUSTER, DEFAULT;
 
 	public static KeyphraseExtractionAlgorithm fromString(String value) {
 		if ("JATE_TTF".equalsIgnoreCase(value))
@@ -49,8 +49,8 @@ public enum KeyphraseExtractionAlgorithm {
 		if ("TOPICAL_PAGE_RANK".equalsIgnoreCase(value))
 			return TOPICAL_PAGE_RANK;
 
-		if ("COMMUNITY_CLUSTER".equalsIgnoreCase(value))
-			return COMMUNITY_CLUSTER;
+		if ("KEY_CLUSTER".equalsIgnoreCase(value))
+			return KEY_CLUSTER;
 
 		return DEFAULT;
 	}
