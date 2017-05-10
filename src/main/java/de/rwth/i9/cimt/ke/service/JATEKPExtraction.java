@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.jate.Jate;
-import de.rwth.i9.cimt.ke.model.Keyword;
+import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.jate.Jate;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import uk.ac.shef.dcs.jate.JATEException;
 import uk.ac.shef.dcs.jate.model.JATETerm;
 

@@ -8,9 +8,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.model.Keyword;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.service.RAKEKPExtraction;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImpl;
+import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 
 @Service("communityClusterKPExtraction")
 public class CommunityClusterKPExtraction {
@@ -18,7 +18,7 @@ public class CommunityClusterKPExtraction {
 	private static final Logger log = LoggerFactory.getLogger(RAKEKPExtraction.class);
 
 	@Autowired
-	OpenNLPImpl openNLPImpl;
+	OpenNLPImplSpring openNLPImplSpring;
 
 	public List<Keyword> extractKeyword(String text, int numKeywords) {
 		log.info("KeyCluster KeyphraseExtraction");

@@ -9,15 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.unsupervised.topicclustering.TopicalPageRank;
-import de.rwth.i9.cimt.ke.model.Keyword;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImpl;
+import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.unsupervised.topicclustering.TopicalPageRank;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
+import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 
 @Service("topicalPageRankKPExtraction")
 public class TopicalPageRankKPExtraction {
 	private static final Logger log = LoggerFactory.getLogger(TopicalPageRankKPExtraction.class);
 	@Autowired
-	OpenNLPImpl openNLPImpl;
+	OpenNLPImplSpring openNLPImplSpring;
 
 	@Autowired
 	private Environment env;
@@ -25,7 +25,7 @@ public class TopicalPageRankKPExtraction {
 	public List<Keyword> extractKeywordTPR(String textbody, int numKeywords) {
 		List<Keyword> keywords = new ArrayList<>();
 		int iter = 0;
-		List<Keyword> allKeywords = TopicalPageRank.performTopicalPageRankKE(textbody, openNLPImpl,
+		List<Keyword> allKeywords = TopicalPageRank.performTopicalPageRankKE(textbody, openNLPImplSpring,
 				env.getProperty("cimt.home"));
 		for (Keyword keyword : allKeywords) {
 			if (iter == numKeywords) {

@@ -9,17 +9,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.textrank.LanguageEnglish;
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.textrank.TextRankWordnet;
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.unsupervised.graphranking.TextRank;
-import de.rwth.i9.cimt.ke.model.Keyword;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImpl;
+import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.textrank.LanguageEnglish;
+import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.textrank.TextRankWordnet;
+import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.unsupervised.graphranking.TextRank;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
+import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 
 @Service("textRankKPExtraction")
 public class TextRankKPExtraction {
 	private static final Logger log = LoggerFactory.getLogger(TextRankKPExtraction.class);
 	@Autowired
-	OpenNLPImpl openNLPImpl;
+	OpenNLPImplSpring openNLPImplSpring;
 	@Autowired
 	LanguageEnglish languageEnglish;
 	private @Value("${cimt.home}") String cimtHome;
@@ -27,7 +27,7 @@ public class TextRankKPExtraction {
 	public List<Keyword> extractKeywordTextRank(String text, int numKeyword) {
 		List<Keyword> keywords = new ArrayList<>();
 		// our implementation
-		List<Keyword> totalkeywords = TextRank.performTextRankKE(text, openNLPImpl);
+		List<Keyword> totalkeywords = TextRank.performTextRankKE(text, openNLPImplSpring);
 		// List<Keyword> totalkeywords =
 		// TextRankWordnet.extractKeywordTextRankWordnet(text, openNLPImpl,
 		// languageEnglish,
@@ -45,7 +45,7 @@ public class TextRankKPExtraction {
 
 	public List<Keyword> extractKeywordTextRankWordnet(String text, int numKeyword) {
 		List<Keyword> keywords = new ArrayList<>();
-		List<Keyword> totalkeywords = TextRankWordnet.extractKeywordTextRankWordnet(text, openNLPImpl, languageEnglish,
+		List<Keyword> totalkeywords = TextRankWordnet.extractKeywordTextRankWordnet(text, openNLPImplSpring, languageEnglish,
 				cimtHome + "/LexSemResources/WordNet3.0", true);
 		totalkeywords.sort(Keyword.KeywordComparatorDesc);
 		for (Keyword keyword : totalkeywords) {

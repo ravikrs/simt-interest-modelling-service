@@ -8,19 +8,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.algorithm.kpextraction.unsupervised.graphranking.TopicRank;
-import de.rwth.i9.cimt.ke.model.Keyword;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImpl;
+import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.unsupervised.graphranking.TopicRank;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
+import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 
 @Service("topicRankKPExtraction")
 public class TopicRankKPExtraction {
 	private static final Logger log = LoggerFactory.getLogger(TopicRankKPExtraction.class);
 	@Autowired
-	OpenNLPImpl openNLPImpl;
+	OpenNLPImplSpring openNLPImplSpring;
 
 	public List<Keyword> extractKeywordTopicRank(String text, int numKeyword) {
 		List<Keyword> keywords = new ArrayList<Keyword>();
-		List<Keyword> totalkeywords = TopicRank.performTopicRankKE(text, openNLPImpl);
+		List<Keyword> totalkeywords = TopicRank.performTopicRankKE(text, openNLPImplSpring);
 		for (Keyword keyword : totalkeywords) {
 			if (keywords.size() >= numKeyword) {
 				break;

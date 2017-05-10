@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
-import de.rwth.i9.cimt.ke.model.Keyword;
-import de.rwth.i9.cimt.ke.model.Textbody;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
+import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.cimt.ke.service.topic.KeyClusterKPExtraction;
 import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
 

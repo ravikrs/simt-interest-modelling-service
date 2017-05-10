@@ -17,10 +17,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
-import de.rwth.i9.cimt.ke.model.Keyword;
-import de.rwth.i9.cimt.ke.model.Textbody;
+import de.rwth.i9.cimt.ke.lib.model.Keyword;
+import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.cimt.ke.service.KPExtraction;
 import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
+import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 
 @Configuration
 @RestController
@@ -31,6 +32,9 @@ public class HomeController {
 	KPExtraction kpExtraction;
 	@Autowired
 	TopicalPageRankKPExtraction topicalPageRankKPExtraction;
+
+	@Autowired
+	Wikipedia simpleWikiDb;
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView getKE(Model model) {
