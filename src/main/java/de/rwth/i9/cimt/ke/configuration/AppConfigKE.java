@@ -31,11 +31,11 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 public class AppConfigKE {
 	private static final Logger log = LoggerFactory.getLogger(AppConfigKE.class);
-	private @Value("${cimt.wikipedia.sql.host}") String wikipediaSqlHost;
-	private @Value("${cimt.wikipedia.sql.database}") String wikipediaSqlDatabase;
-	private @Value("${cimt.wikipedia.sql.user}") String wikipediaSqlUser;
-	private @Value("${cimt.wikipedia.sql.password}") String wikipediaSqlPassword;
-	private @Value("${cimt.wikipedia.language}") String wikipediaSqlLanguage;
+	private @Value("${cimt.wikipedia.en.sql.host}") String wikipediaSqlHost;
+	private @Value("${cimt.wikipedia.en.sql.database}") String wikipediaSqlDatabase;
+	private @Value("${cimt.wikipedia.en.sql.user}") String wikipediaSqlUser;
+	private @Value("${cimt.wikipedia.en.sql.password}") String wikipediaSqlPassword;
+	private @Value("${cimt.wikipedia.en.language}") String wikipediaSqlLanguage;
 
 	@Bean
 	public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {

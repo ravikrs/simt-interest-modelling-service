@@ -1,5 +1,6 @@
 package de.rwth.i9.cimt.ke.controller;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.utils.ExceptionUtils;
@@ -20,6 +21,7 @@ import org.springframework.web.servlet.ModelAndView;
 import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.cimt.ke.service.KPExtraction;
+import de.rwth.i9.cimt.ke.service.semantic.WikipediaBasedConceptMap;
 import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 
@@ -35,6 +37,9 @@ public class HomeController {
 
 	@Autowired
 	Wikipedia simpleWikiDb;
+
+	@Autowired
+	WikipediaBasedConceptMap wbConceptMap;
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView getKE(Model model) {
@@ -77,6 +82,23 @@ public class HomeController {
 			numKeywords = 10;
 		}
 		return kpExtraction.extractKeyword(textbody.getText(), textbody.getAlgorithmName(), numKeywords);
+	}
+
+	@RequestMapping(value = "/conceptmap", method = RequestMethod.GET)
+	public ModelAndView getConceptMap(Model model) {
+		log.info("Inside the getKPTR");
+		model.addAttribute("textbody", new Textbody());
+		return new ModelAndView("conceptmap", "model", "objectName");
+	}
+
+	@RequestMapping(value = "/conceptmap", method = RequestMethod.POST)
+	public ModelAndView postConceptMap(Model model, @ModelAttribute Textbody textbody) throws JSONException {
+		log.info("Inside the getKPTR");
+		String[] tokens = textbody.getText().split(",");
+		List<String> pagesString = Arrays.asList(tokens);
+		JSONObject jsonRet = wbConceptMap.getConceptMapJsonForInterests(pagesString);
+		model.addAttribute("conceptjson", jsonRet.toString());
+		return new ModelAndView("conceptmap", "model", model);
 	}
 
 }
