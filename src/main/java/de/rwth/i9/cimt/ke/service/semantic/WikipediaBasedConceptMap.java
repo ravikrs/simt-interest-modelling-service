@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.util.WikipediaUtil;
+import de.rwth.i9.cimt.ke.lib.util.WikipediaUtil;
 import de.tudarmstadt.ukp.wikipedia.api.Category;
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
@@ -29,7 +29,7 @@ public class WikipediaBasedConceptMap {
 	private static final Logger log = LoggerFactory.getLogger(WikipediaBasedConceptMap.class);
 
 	@Autowired
-	Wikipedia simpleWikiDb;
+	private Wikipedia simpleWikiDb;
 
 	@SuppressWarnings("unchecked")
 	public JSONObject getConceptMapJsonForInterests(List<String> interests) throws JSONException {

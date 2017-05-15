@@ -22,8 +22,10 @@ import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.cimt.ke.service.KPExtraction;
 import de.rwth.i9.cimt.ke.service.semantic.WikipediaBasedConceptMap;
+import de.rwth.i9.cimt.ke.service.semantic.WikipediaBasedKE;
 import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
+import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 
 @Configuration
 @RestController
@@ -40,6 +42,9 @@ public class HomeController {
 
 	@Autowired
 	WikipediaBasedConceptMap wbConceptMap;
+
+	@Autowired
+	WikipediaBasedKE wikipediaBasedKE;
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView getKE(Model model) {
@@ -99,6 +104,11 @@ public class HomeController {
 		JSONObject jsonRet = wbConceptMap.getConceptMapJsonForInterests(pagesString);
 		model.addAttribute("conceptjson", jsonRet.toString());
 		return new ModelAndView("conceptmap", "model", model);
+	}
+
+	@RequestMapping(value = "/wikitest", method = RequestMethod.POST)
+	public List<Keyword> postWikiTest(Model model, @ModelAttribute Textbody textbody) throws WikiApiException {
+		return wikipediaBasedKE.performWBKE(textbody.getText());
 	}
 
 }
