@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.lib.util.NLPUtil;
 import de.rwth.i9.cimt.ke.lib.util.WikipediaUtil;
+import de.rwth.i9.cimt.ke.model.wikipedia.WikiPagemapline;
+import de.rwth.i9.cimt.ke.repository.wikipedia.WikiCategoryRepository;
+import de.rwth.i9.cimt.ke.repository.wikipedia.WikiPageRepository;
+import de.rwth.i9.cimt.ke.repository.wikipedia.WikiPagemaplineRepository;
 import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 import de.tudarmstadt.ukp.wikipedia.api.Category;
 import de.tudarmstadt.ukp.wikipedia.api.Page;
@@ -30,11 +34,19 @@ public class WikipediaBasedKE {
 	@Autowired
 	OpenNLPImplSpring openNLPImplSpring;
 
+	@Autowired
+	WikiPageRepository wikiPageRepository;
+	@Autowired
+	WikiCategoryRepository wikiCategoryRepository;
+	@Autowired
+	WikiPagemaplineRepository wikiPagemaplineRepository;
+
 	public List<Keyword> performWBKE(String textContent) throws WikiApiException {
 		List<Keyword> returnedKeywords = new ArrayList<>();
-		Map<String, Integer> candidateTokens = NLPUtil.splitTextByStopWords(textContent, openNLPImplSpring);
+		//Map<String, Integer> candidateTokens = NLPUtil.splitTextByStopWords(textContent, openNLPImplSpring);
+		Map<String, List<Integer>> candidateTokens = NLPUtil.getNounAdjSeqToken(textContent, openNLPImplSpring);
 		Map<String, List<Page>> tokenPageMap = new HashMap<>();
-		for (Map.Entry<String, Integer> entryToken : candidateTokens.entrySet()) {
+		for (Map.Entry<String, List<Integer>> entryToken : candidateTokens.entrySet()) {
 			List<Page> wikipediaPages = this.getWikipediPageForToken(entryToken.getKey());
 			if (!wikipediaPages.isEmpty()) {
 				tokenPageMap.put(entryToken.getKey(), wikipediaPages);
@@ -65,13 +77,15 @@ public class WikipediaBasedKE {
 
 	private List<Page> getWikipediPageForToken(String token) throws WikiApiException {
 		List<Page> pages = new ArrayList<>();
+		Set<Integer> pageIds = new HashSet<>();
 		if (token.isEmpty()) {
 			return pages;
 		}
-		if (this.simpleWikiDb.existsPage(token)) {
-			pages.add(this.simpleWikiDb.getPage(token));
-			return pages;
-		} else {
+		token = token.trim().replace(" ", "_");
+		for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(token)) {
+			pageIds.add(wpm.getPageId());
+		}
+		if (pageIds.isEmpty()) {
 			String[] subtokens = token.split("\\s+");
 			int tokenSize = subtokens.length;
 			Set<String> subCandidates = NLPUtil.generateNgramsCandidate(token, tokenSize - 2, tokenSize - 1);
@@ -85,7 +99,21 @@ public class WikipediaBasedKE {
 
 			}
 			return pages;
+
+		} else {
+			for (Integer pageId : pageIds) {
+				Page p = this.simpleWikiDb.getPage(pageId);
+				pages.add(p);
+			}
+			return pages;
 		}
+
+	}
+
+	public List<WikiPagemapline> getPageIdForTitle(String title) {
+		title = title.trim().replace(" ", "_");
+		return wikiPagemaplineRepository.findByName(title);
+
 	}
 
 }

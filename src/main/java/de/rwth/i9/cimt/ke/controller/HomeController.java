@@ -101,7 +101,7 @@ public class HomeController {
 		log.info("Inside the getKPTR");
 		String[] tokens = textbody.getText().split(",");
 		List<String> pagesString = Arrays.asList(tokens);
-		JSONObject jsonRet = wbConceptMap.getConceptMapJsonForInterests(pagesString);
+		JSONObject jsonRet = wbConceptMap.getConceptMapJsonForLatentParentDescendentInterests(pagesString);
 		model.addAttribute("conceptjson", jsonRet.toString());
 		return new ModelAndView("conceptmap", "model", model);
 	}

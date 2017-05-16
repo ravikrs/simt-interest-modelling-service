@@ -1,0 +1,28 @@
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout">
+<head>
+<title>WB Interest Mining</title>
+<link rel="stylesheet" th:href="@{/css/jqcloud.min.css}"
+	href="../../css/jqcloud.min.css" />
+</head>
+<body>
+	<h1 layout:fragment="header">Keyphrase Extraction</h1>
+	<div layout:fragment="content" class="container">
+		<h1>Form</h1>
+		<form action="#" th:action="@{/interest/}" th:object="${textbody}"
+			method="post">
+			<p>
+				Input Text: <input type="text" th:field="*{text}" />
+			</p>
+			<p>
+				<input type="submit" value="Submit" />
+			</p>
+		</form>
+	</div>
+	<h1 layout:fragment="header"></h1>
+	
+
+</body>
+
+</html>
