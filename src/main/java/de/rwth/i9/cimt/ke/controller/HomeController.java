@@ -1,6 +1,5 @@
 package de.rwth.i9.cimt.ke.controller;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.utils.ExceptionUtils;
@@ -21,11 +20,7 @@ import org.springframework.web.servlet.ModelAndView;
 import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.cimt.ke.service.KPExtraction;
-import de.rwth.i9.cimt.ke.service.semantic.WikipediaBasedConceptMap;
-import de.rwth.i9.cimt.ke.service.semantic.WikipediaBasedKE;
 import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
-import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
-import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 
 @Configuration
 @RestController
@@ -36,15 +31,6 @@ public class HomeController {
 	KPExtraction kpExtraction;
 	@Autowired
 	TopicalPageRankKPExtraction topicalPageRankKPExtraction;
-
-	@Autowired
-	Wikipedia simpleWikiDb;
-
-	@Autowired
-	WikipediaBasedConceptMap wbConceptMap;
-
-	@Autowired
-	WikipediaBasedKE wikipediaBasedKE;
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView getKE(Model model) {
@@ -64,7 +50,7 @@ public class HomeController {
 				numKeywords);
 		try {
 			JSONArray jsonResp = new JSONArray();
-			JSONObject obj = null;
+			JSONObject obj;
 			for (Keyword k : keywords) {
 				obj = new JSONObject();
 				obj.put("weight", k.getWeight());
@@ -87,28 +73,6 @@ public class HomeController {
 			numKeywords = 10;
 		}
 		return kpExtraction.extractKeyword(textbody.getText(), textbody.getAlgorithmName(), numKeywords);
-	}
-
-	@RequestMapping(value = "/conceptmap", method = RequestMethod.GET)
-	public ModelAndView getConceptMap(Model model) {
-		log.info("Inside the getKPTR");
-		model.addAttribute("textbody", new Textbody());
-		return new ModelAndView("conceptmap", "model", "objectName");
-	}
-
-	@RequestMapping(value = "/conceptmap", method = RequestMethod.POST)
-	public ModelAndView postConceptMap(Model model, @ModelAttribute Textbody textbody) throws JSONException {
-		log.info("Inside the getKPTR");
-		String[] tokens = textbody.getText().split(",");
-		List<String> pagesString = Arrays.asList(tokens);
-		JSONObject jsonRet = wbConceptMap.getConceptMapJsonForLatentParentDescendentInterests(pagesString);
-		model.addAttribute("conceptjson", jsonRet.toString());
-		return new ModelAndView("conceptmap", "model", model);
-	}
-
-	@RequestMapping(value = "/wikitest", method = RequestMethod.POST)
-	public List<Keyword> postWikiTest(Model model, @ModelAttribute Textbody textbody) throws WikiApiException {
-		return wikipediaBasedKE.performWBKE(textbody.getText());
 	}
 
 }

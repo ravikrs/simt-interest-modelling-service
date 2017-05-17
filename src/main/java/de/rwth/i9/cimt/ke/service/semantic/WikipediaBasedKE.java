@@ -16,8 +16,6 @@ import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.lib.util.NLPUtil;
 import de.rwth.i9.cimt.ke.lib.util.WikipediaUtil;
 import de.rwth.i9.cimt.ke.model.wikipedia.WikiPagemapline;
-import de.rwth.i9.cimt.ke.repository.wikipedia.WikiCategoryRepository;
-import de.rwth.i9.cimt.ke.repository.wikipedia.WikiPageRepository;
 import de.rwth.i9.cimt.ke.repository.wikipedia.WikiPagemaplineRepository;
 import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 import de.tudarmstadt.ukp.wikipedia.api.Category;
@@ -34,10 +32,6 @@ public class WikipediaBasedKE {
 	@Autowired
 	OpenNLPImplSpring openNLPImplSpring;
 
-	@Autowired
-	WikiPageRepository wikiPageRepository;
-	@Autowired
-	WikiCategoryRepository wikiCategoryRepository;
 	@Autowired
 	WikiPagemaplineRepository wikiPagemaplineRepository;
 
@@ -81,8 +75,8 @@ public class WikipediaBasedKE {
 		if (token.isEmpty()) {
 			return pages;
 		}
-		token = token.trim().replace(" ", "_");
-		for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(token)) {
+		String tokenWB = token.trim().replaceAll("\\s+", "_");
+		for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(tokenWB)) {
 			pageIds.add(wpm.getPageId());
 		}
 		if (pageIds.isEmpty()) {
@@ -111,7 +105,7 @@ public class WikipediaBasedKE {
 	}
 
 	public List<WikiPagemapline> getPageIdForTitle(String title) {
-		title = title.trim().replace(" ", "_");
+		title = title.trim().replaceAll("\\s+", "_");
 		return wikiPagemaplineRepository.findByName(title);
 
 	}

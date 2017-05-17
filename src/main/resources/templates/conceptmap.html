@@ -16,6 +16,14 @@
 				Input Text: <input type="text" th:field="*{text}" />
 			</p>
 			<p>
+				Algorithm Name: <select id="algorithmName" name="algorithmName"
+					th:field="*{algorithmName}">
+					<option
+						th:each="algorithm : ${T(de.rwth.i9.cimt.ke.constants.LatentInterests).values()}"
+						th:value="${algorithm}" th:text="${algorithm}"></option>
+				</select>
+			</p>
+			<p>
 				<input type="submit" value="Get Concept Map" />
 			</p>
 		</form>
