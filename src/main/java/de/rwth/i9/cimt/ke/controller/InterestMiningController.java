@@ -47,10 +47,9 @@ public class InterestMiningController {
 	WikipediaBasedKE wikipediaBasedKE;
 
 	@Autowired
-	WikipediaBasedIM wikipediaBasedIM;
-
-	@Autowired
 	AuthorInterestsRepository authorInterestRepository;
+	@Autowired
+	WikipediaBasedIM wikipediaBasedIM;
 
 	@RequestMapping(value = "/interest", method = RequestMethod.GET)
 	public ModelAndView getIMWikiBased(Model model) {
@@ -66,35 +65,61 @@ public class InterestMiningController {
 		KeyphraseExtractionAlgorithm ke = KeyphraseExtractionAlgorithm.fromString(interestReqBody.getAlgorithmName());
 		List<AuthorInterests> interests = authorInterestRepository
 				.findByAuthorIdAndKeAlgorithm(interestReqBody.getAuthorId(), ke.toString());
-		List<String> pagesString = new ArrayList<>();
 		List<WordCount> wcs = new ArrayList<>();
 		for (AuthorInterests authInt : interests) {
 			wcs.addAll(WordCount.parseIntoList(authInt.getAuthorInterest()));
-			for (WordCount wc : WordCount.parseIntoList(authInt.getAuthorInterest())) {
-				pagesString.add(wc.getX());
-			}
 		}
 
 		JSONObject jsonRet = new JSONObject();
 		LatentInterests conceptMapType = LatentInterests.fromString(interestReqBody.getLatentInterestType());
 		switch (conceptMapType) {
 		case CTG_PARENT:
-			//jsonRet = wbConceptMap.getConceptMapJsonForLatentParentInterests(pagesString);
-			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs);
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs,
+					interestReqBody.getNumKeywords());
 			break;
 		case CTG_PARENT_SIBLING:
-			jsonRet = wbConceptMap.getConceptMapJsonForLatentParentSiblingInterests(pagesString);
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentSiblingCategories(wcs,
+					interestReqBody.getNumKeywords(), interestReqBody.getFilterCommonCategory());
+			break;
+		case CTG_PARENT_DESCENDENT:
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentDescendentCategories(wcs,
+					interestReqBody.getNumKeywords(), interestReqBody.getFilterCommonCategory());
 			break;
 		case CTG_PARENT_SIBLING_DESCENDENT:
-			jsonRet = wbConceptMap.getConceptMapJsonForLatentParentSiblingDescendentInterests(pagesString);
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentSiblingDescendentCategories(wcs,
+					interestReqBody.getNumKeywords(), interestReqBody.getFilterCommonCategory());
 			break;
 
-		default:
-			jsonRet = wbConceptMap.getConceptMapJsonForLatentParentDescendentInterests(pagesString);
-			break;
+		case DEFAULT:
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs,
+					interestReqBody.getNumKeywords());
 		}
 		model.addAttribute("conceptjson", jsonRet.toString());
 		return new ModelAndView("wbimview", "model", model);
+	}
+
+	@RequestMapping(value = "/interest/kewb", method = RequestMethod.GET)
+	public ModelAndView getIMKEWikiBased(Model model) {
+		log.info("Inside the getIMWikiBased");
+		model.addAttribute("interestRequestBody", new InterestRequestBody());
+		return new ModelAndView("wbkeview", "model", "objectName");
+	}
+
+	@RequestMapping(value = "/interest/kewb", method = RequestMethod.POST)
+	public ModelAndView postIMKEWikiBased(Model model, @ModelAttribute InterestRequestBody interestReqBody)
+			throws JSONException, WikiApiException {
+
+		KeyphraseExtractionAlgorithm ke = KeyphraseExtractionAlgorithm.fromString(interestReqBody.getAlgorithmName());
+		List<AuthorInterests> interests = authorInterestRepository
+				.findByAuthorIdAndKeAlgorithm(interestReqBody.getAuthorId(), ke.toString());
+		List<WordCount> wcs = new ArrayList<>();
+		for (AuthorInterests authInt : interests) {
+			wcs.addAll(WordCount.parseIntoList(authInt.getAuthorInterest()));
+		}
+
+		JSONObject jsonRet = wikipediaBasedKE.getConceptMapJsonForKeywords(wcs, interestReqBody.getNumKeywords());
+		model.addAttribute("conceptjson", jsonRet.toString());
+		return new ModelAndView("wbkeview", "model", model);
 	}
 
 	@RequestMapping(value = "/conceptmap", method = RequestMethod.GET)

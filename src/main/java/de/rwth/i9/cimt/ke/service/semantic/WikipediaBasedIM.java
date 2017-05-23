@@ -1,14 +1,12 @@
 package de.rwth.i9.cimt.ke.service.semantic;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.tika.utils.ExceptionUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,633 +24,28 @@ import de.tudarmstadt.ukp.wikipedia.api.Category;
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
-import de.tudarmstadt.ukp.wikipedia.api.exception.WikiTitleParsingException;
 
 @Service("wikipediaBasedIM")
 public class WikipediaBasedIM {
-
 	private static final Logger log = LoggerFactory.getLogger(WikipediaBasedIM.class);
 
 	@Autowired
 	private Wikipedia simpleWikiDb;
 	@Autowired
 	WikiPagemaplineRepository wikiPagemaplineRepository;
-	private static final int CATEGORY_COUNT_40 = 40;
-	private static final int CATEGORY_COUNT_20 = 20;
-	private static final int CATEGORY_COUNT_10 = 10;
+	private static final int COUNT_40 = 40;
 
-	@SuppressWarnings("unchecked")
-	public JSONObject getConceptMapJsonForLatentParentDescendentInterests(List<String> interests) throws JSONException {
-		JSONObject conceptMapJsonData = new JSONObject();
-		Set<String> uniqueInterests = new HashSet<>(interests);
-		Map<Integer, JSONObject> pageIdDItemMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdParentThemeMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdDescendentThemeMap = new HashMap<>();
-		Map<Integer, Integer> pageIdDescendentCountMap = new HashMap<>();
-		Map<Integer, Set<String>> pageCategoryMap = new HashMap<>();
-		JSONArray themes = new JSONArray();
-		JSONArray perspectives = new JSONArray();
-		JSONArray ditems = new JSONArray();
-		JSONArray ditemsLinks = new JSONArray();
-		int ditemId = 0;
-
-		for (String interest : uniqueInterests) {
-			try {
-				//get wikipedia page for interest and create an item in json format required by d3 concept map
-				Set<Integer> pageIds = new HashSet<>();
-				Set<Page> wbPages = new HashSet<>();
-
-				if (simpleWikiDb.existsPage(interest)) {
-					Page p = simpleWikiDb.getPage(interest);
-					wbPages.add(p);
-				} else {
-					String wbInterestToken = interest.trim().replaceAll("\\s+", "_");
-					for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(wbInterestToken)) {
-						pageIds.add(wpm.getPageId());
-					}
-					for (Integer pageId : pageIds) {
-						wbPages.add(simpleWikiDb.getPage(pageId));
-					}
-				}
-				for (Page p : wbPages) {
-					int pageId = p.getPageId();
-					if (!pageIdDItemMap.containsKey(p.getPageId())) {
-						JSONObject dItemJson = new JSONObject();
-						ditemId++;
-						dItemJson.put("type", "ditem");
-						dItemJson.put("name", p.getTitle().getEntity());
-						dItemJson.put("description", "Interest: " + p.getTitle().getEntity());
-						dItemJson.put("ditem", ditemId);
-						dItemJson.put("slug", "Page-" + p.getTitle().getEntity().replaceAll("\\s+", "-"));
-						dItemJson.put("pageId", pageId);
-						pageIdDItemMap.put(pageId, dItemJson);
-						pageCategoryMap.put(pageId, new HashSet<>());
-
-						//get parent categories for the wikipedia page and create themes for d3 concept map json
-						for (Category parentCategory : p.getCategories()) {
-							int parentCategoryPageId = parentCategory.getPageId();
-							if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryPageId)) {
-								continue;
-							}
-							if (pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								pageIdDescendentCountMap.remove(parentCategoryPageId);
-								pageIdDescendentThemeMap.remove(parentCategoryPageId);
-							}
-
-							if (!pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								JSONObject themeJson = new JSONObject();
-								themeJson.put("type", "theme");
-								themeJson.put("name", "Ctg: " + parentCategory.getTitle().getEntity());
-								themeJson.put("description",
-										"Parent Category : " + parentCategory.getTitle().getEntity());
-								themeJson.put("slug",
-										"Ctg-" + parentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-								pageIdParentThemeMap.put(parentCategoryPageId, themeJson);
-							}
-							Set<String> links = pageCategoryMap.get(pageId);
-							links.add("Ctg: " + parentCategory.getTitle().getEntity());
-
-							//for each category get descendent to be used for creating perspective for d3 concept map json
-							// these will be descendents of parent category... so in an abstract way, at the same level as the interests provided by user
-							for (Category descendentCategory : parentCategory.getChildren()) {
-								int descendentPageId = descendentCategory.getPageId();
-								if (WikipediaUtil.isGenericWikipediaCategory(descendentPageId)) {
-									continue;
-								}
-								if (!pageIdDescendentThemeMap.containsKey(descendentPageId)) {
-									JSONObject themeJson = new JSONObject();
-									themeJson.put("type", "theme");
-									themeJson.put("name", "DCtg: " + descendentCategory.getTitle().getEntity());
-									themeJson.put("description",
-											"Descendent Category : " + descendentCategory.getTitle().getEntity());
-									themeJson.put("slug", "DCtg-"
-											+ descendentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-									pageIdDescendentThemeMap.put(descendentPageId, themeJson);
-									pageIdDescendentCountMap.put(descendentPageId, 1);
-								} else if (pageIdDescendentCountMap.containsKey(descendentPageId)) {
-									pageIdDescendentCountMap.put(descendentPageId,
-											pageIdDescendentCountMap.get(descendentPageId) + 1);
-								}
-								links.add(pageIdDescendentThemeMap.get(descendentPageId).getString("name"));
-
-							}
-						}
-
-					}
-				}
-
-			} catch (WikiApiException ex) {
-				log.debug(ExceptionUtils.getStackTrace(ex));
-
-			}
-
-		}
-
-		// create themes json array for d3 concept map (wikipedia categories)
-		Set<String> selectedCategoriesString = new HashSet<>();
-		for (Map.Entry<Integer, JSONObject> theme : pageIdParentThemeMap.entrySet()) {
-			themes.put(theme.getValue());
-			selectedCategoriesString.add(theme.getValue().getString("name"));
-		}
-
-		//create sibling json array for d3 concept map
-		int siblingCategorySizeLimit = pageIdParentThemeMap.size();
-		Object[] a = pageIdDescendentCountMap.entrySet().toArray();
-		Arrays.sort(a, new Comparator<Object>() {
-			public int compare(Object o1, Object o2) {
-				return ((Map.Entry<Integer, Integer>) o2).getValue()
-						.compareTo(((Map.Entry<Integer, Integer>) o1).getValue());
-			}
-		});
-
-		// add only perspectiveJsonSizeLimit perspectives which are common accross other categories
-
-		for (int iter = 0; iter < a.length && iter < siblingCategorySizeLimit; iter++) {
-			Map.Entry<Integer, Integer> entry = (Map.Entry<Integer, Integer>) a[iter];
-			JSONObject themeJson = pageIdDescendentThemeMap.get(entry.getKey());
-			themes.put(themeJson);
-			selectedCategoriesString.add(themeJson.getString("name"));
-		}
-
-		//create ditems json array for d3 concept map with links to descendent/parent categories
-		for (Map.Entry<Integer, JSONObject> ditem : pageIdDItemMap.entrySet()) {
-			JSONObject ditemJsonObject = ditem.getValue();
-			Set<String> allCategoryLinks = new HashSet<>(pageCategoryMap.get(ditemJsonObject.getInt("pageId")));
-			Set<String> refinedLinks = new HashSet<>(selectedCategoriesString);
-			refinedLinks.retainAll(allCategoryLinks);
-			// add links to ditem
-			ditemsLinks = new JSONArray(refinedLinks);
-			ditemJsonObject.put("links", ditemsLinks);
-			ditemJsonObject.remove("pageId");
-			ditems.put(ditem.getValue());
-		}
-		//categories
-		conceptMapJsonData.put("ditems", ditems);
-		//Interests
-		conceptMapJsonData.put("themes", themes);
-		conceptMapJsonData.put("perspectives", perspectives);
-		return conceptMapJsonData;
-	}
-
-	public JSONObject getConceptMapJsonForLatentParentSiblingInterests(List<String> interests) throws JSONException {
-		JSONObject conceptMapJsonData = new JSONObject();
-		Set<String> uniqueInterests = new HashSet<>(interests);
-		Map<Integer, JSONObject> pageIdDItemMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdParentThemeMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdSiblingThemeMap = new HashMap<>();
-		Map<Integer, Integer> pageIdSiblingCountMap = new HashMap<>();
-		Map<Integer, Set<String>> pageCategoryMap = new HashMap<>();
-		JSONArray themes = new JSONArray();
-		JSONArray perspectives = new JSONArray();
-		JSONArray ditems = new JSONArray();
-		JSONArray ditemsLinks = new JSONArray();
-		int ditemId = 0;
-
-		for (String interest : uniqueInterests) {
-			try {
-				//get wikipedia page for interest and create an item in json format required by d3 concept map
-				Set<Integer> pageIds = new HashSet<>();
-				Set<Page> wbPages = new HashSet<>();
-
-				if (simpleWikiDb.existsPage(interest)) {
-					Page p = simpleWikiDb.getPage(interest);
-					wbPages.add(p);
-				} else {
-					String wbInterestToken = interest.trim().replaceAll("\\s+", "_");
-					for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(wbInterestToken)) {
-						pageIds.add(wpm.getPageId());
-					}
-					for (Integer pageId : pageIds) {
-						wbPages.add(simpleWikiDb.getPage(pageId));
-					}
-				}
-				for (Page p : wbPages) {
-					int pageId = p.getPageId();
-					if (!pageIdDItemMap.containsKey(p.getPageId())) {
-						JSONObject dItemJson = new JSONObject();
-						ditemId++;
-						dItemJson.put("type", "ditem");
-						dItemJson.put("name", p.getTitle().getEntity());
-						dItemJson.put("description", "Interest: " + p.getTitle().getEntity());
-						dItemJson.put("ditem", ditemId);
-						dItemJson.put("slug", "Page-" + p.getTitle().getEntity().replaceAll("\\s+", "-"));
-						dItemJson.put("pageId", pageId);
-						pageIdDItemMap.put(pageId, dItemJson);
-						pageCategoryMap.put(pageId, new HashSet<>());
-
-						//get parent categories for the wikipedia page and create themes for d3 concept map json
-						for (Category parentCategory : p.getCategories()) {
-							int parentCategoryPageId = parentCategory.getPageId();
-							if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryPageId)) {
-								continue;
-							}
-							if (pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								pageIdSiblingCountMap.remove(parentCategoryPageId);
-								pageIdSiblingThemeMap.remove(parentCategoryPageId);
-							}
-
-							if (!pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								JSONObject themeJson = new JSONObject();
-								themeJson.put("type", "theme");
-								themeJson.put("name", "Ctg: " + parentCategory.getTitle().getEntity());
-								themeJson.put("description",
-										"Parent Category : " + parentCategory.getTitle().getEntity());
-								themeJson.put("slug",
-										"Ctg-" + parentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-								pageIdParentThemeMap.put(parentCategoryPageId, themeJson);
-							}
-							Set<String> links = pageCategoryMap.get(pageId);
-							links.add("Ctg: " + parentCategory.getTitle().getEntity());
-
-							//for each category get descendent to be used for creating perspective for d3 concept map json
-							// these will be descendents of parent category... so in an abstract way, at the same level as the interests provided by user
-							for (Category siblingCategory : parentCategory.getChildren()) {
-								int siblingPageId = siblingCategory.getPageId();
-								if (WikipediaUtil.isGenericWikipediaCategory(siblingPageId)) {
-									continue;
-								}
-								if (!pageIdSiblingThemeMap.containsKey(siblingPageId)) {
-									JSONObject themeJson = new JSONObject();
-									themeJson.put("type", "theme");
-									themeJson.put("name", "SCtg: " + siblingCategory.getTitle().getEntity());
-									themeJson.put("description",
-											"Sibling Category : " + siblingCategory.getTitle().getEntity());
-									themeJson.put("slug",
-											"SCtg-" + siblingCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-									pageIdSiblingThemeMap.put(siblingPageId, themeJson);
-									pageIdSiblingCountMap.put(siblingPageId, 1);
-								} else if (pageIdSiblingCountMap.containsKey(siblingPageId)) {
-									pageIdSiblingCountMap.put(siblingPageId,
-											pageIdSiblingCountMap.get(siblingPageId) + 1);
-								}
-								links.add(pageIdSiblingThemeMap.get(siblingPageId).getString("name"));
-
-							}
-						}
-
-					}
-				}
-
-			} catch (WikiApiException ex) {
-				log.debug(ExceptionUtils.getStackTrace(ex));
-
-			}
-
-		}
-
-		// create themes json array for d3 concept map (wikipedia categories)
-		Set<String> selectedCategoriesString = new HashSet<>();
-		for (Map.Entry<Integer, JSONObject> theme : pageIdParentThemeMap.entrySet()) {
-			themes.put(theme.getValue());
-			selectedCategoriesString.add(theme.getValue().getString("name"));
-		}
-
-		//create sibling json array for d3 concept map
-		int siblingCategorySizeLimit = pageIdParentThemeMap.size();
-		Object[] s = pageIdSiblingCountMap.entrySet().toArray();
-		Arrays.sort(s, new Comparator<Object>() {
-			public int compare(Object o1, Object o2) {
-				return ((Map.Entry<Integer, Integer>) o2).getValue()
-						.compareTo(((Map.Entry<Integer, Integer>) o1).getValue());
-			}
-		});
-
-		// add only perspectiveJsonSizeLimit perspectives which are common accross other categories
-
-		for (int iter = 0; iter < s.length && iter < siblingCategorySizeLimit; iter++) {
-			Map.Entry<Integer, Integer> entry = (Map.Entry<Integer, Integer>) s[iter];
-			JSONObject themeJson = pageIdSiblingThemeMap.get(entry.getKey());
-			themes.put(themeJson);
-			selectedCategoriesString.add(themeJson.getString("name"));
-		}
-
-		//create ditems json array for d3 concept map with links to sibling/parent categories
-		for (Map.Entry<Integer, JSONObject> ditem : pageIdDItemMap.entrySet()) {
-			JSONObject ditemJsonObject = ditem.getValue();
-			Set<String> allCategoryLinks = new HashSet<>(pageCategoryMap.get(ditemJsonObject.getInt("pageId")));
-			Set<String> refinedLinks = new HashSet<>(selectedCategoriesString);
-			refinedLinks.retainAll(allCategoryLinks);
-			// add links to ditem
-			ditemsLinks = new JSONArray(refinedLinks);
-			ditemJsonObject.put("links", ditemsLinks);
-			ditemJsonObject.remove("pageId");
-			ditems.put(ditem.getValue());
-		}
-		//categories
-		conceptMapJsonData.put("ditems", ditems);
-		//Interests
-		conceptMapJsonData.put("themes", themes);
-		//siblings
-		conceptMapJsonData.put("perspectives", perspectives);
-		return conceptMapJsonData;
-	}
-
-	public JSONObject getConceptMapJsonForLatentParentInterests(List<String> interests) throws JSONException {
-		JSONObject conceptMapJsonData = new JSONObject();
-		Set<String> uniqueInterests = new HashSet<>(interests);
-		Map<Integer, JSONObject> pageIdDItemMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdParentThemeMap = new HashMap<>();
-		Map<Integer, Set<String>> pageCategoryMap = new HashMap<>();
-		JSONArray themes = new JSONArray();
-		JSONArray perspectives = new JSONArray();
-		JSONArray ditems = new JSONArray();
-		int ditemId = 0;
-
-		for (String interest : uniqueInterests) {
-			try {
-				//get wikipedia page for interest and create an item in json format required by d3 concept map
-				Set<Integer> pageIds = new HashSet<>();
-				Set<Page> wbPages = new HashSet<>();
-
-				if (simpleWikiDb.existsPage(interest)) {
-					Page p = simpleWikiDb.getPage(interest);
-					wbPages.add(p);
-				} else {
-					String wbInterestToken = interest.trim().replaceAll("\\s+", "_");
-					for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(wbInterestToken)) {
-						pageIds.add(wpm.getPageId());
-					}
-					for (Integer pageId : pageIds) {
-						wbPages.add(simpleWikiDb.getPage(pageId));
-					}
-				}
-				for (Page p : wbPages) {
-					int pageId = p.getPageId();
-					if (!pageIdDItemMap.containsKey(p.getPageId())) {
-						JSONObject dItemJson = new JSONObject();
-						JSONArray ditemsLinks = new JSONArray();
-						ditemId++;
-						dItemJson.put("type", "ditem");
-						dItemJson.put("name", p.getTitle().getEntity());
-						dItemJson.put("description", "Interest: " + p.getTitle().getEntity());
-						dItemJson.put("ditem", ditemId);
-						dItemJson.put("slug", "Page-" + p.getTitle().getEntity().replaceAll("\\s+", "-"));
-						dItemJson.put("pageId", pageId);
-						pageIdDItemMap.put(pageId, dItemJson);
-						pageCategoryMap.put(pageId, new HashSet<>());
-
-						//get parent categories for the wikipedia page and create themes for d3 concept map json
-						for (Category parentCategory : p.getCategories()) {
-							int parentCategoryPageId = parentCategory.getPageId();
-							if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryPageId)) {
-								continue;
-							}
-							if (!pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								JSONObject themeJson = new JSONObject();
-								themeJson.put("type", "theme");
-								themeJson.put("name", "Ctg: " + parentCategory.getTitle().getEntity());
-								themeJson.put("description",
-										"Parent Category : " + parentCategory.getTitle().getEntity());
-								themeJson.put("slug",
-										"Ctg-" + parentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-								ditemsLinks.put(themeJson.getString("name"));
-								pageIdParentThemeMap.put(parentCategoryPageId, themeJson);
-							} else {
-								ditemsLinks.put(pageIdParentThemeMap.get(parentCategoryPageId).getString("name"));
-							}
-
-						}
-						dItemJson.put("links", ditemsLinks);
-						ditems.put(dItemJson);
-
-					}
-				}
-
-			} catch (WikiApiException ex) {
-				log.debug(ExceptionUtils.getStackTrace(ex));
-
-			}
-
-		}
-
-		// create themes json array for d3 concept map (wikipedia categories)
-		for (Map.Entry<Integer, JSONObject> theme : pageIdParentThemeMap.entrySet()) {
-			themes.put(theme.getValue());
-		}
-
-		//categories
-		conceptMapJsonData.put("ditems", ditems);
-		//Interests
-		conceptMapJsonData.put("themes", themes);
-		//siblings
-		conceptMapJsonData.put("perspectives", perspectives);
-		return conceptMapJsonData;
-	}
-
-	public JSONObject getConceptMapJsonForLatentParentSiblingDescendentInterests(List<String> interests)
-			throws JSONException {
-		JSONObject conceptMapJsonData = new JSONObject();
-		Set<String> uniqueInterests = new HashSet<>(interests);
-		Map<Integer, JSONObject> pageIdDItemMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdParentThemeMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdDescendentThemeMap = new HashMap<>();
-		Map<Integer, Integer> pageIdDescendentCountMap = new HashMap<>();
-
-		Map<Integer, JSONObject> pageIdSiblingThemeMap = new HashMap<>();
-		Map<Integer, Integer> pageIdSiblingCountMap = new HashMap<>();
-
-		Map<Integer, Set<String>> pageCategoryMap = new HashMap<>();
-		JSONArray themes = new JSONArray();
-		JSONArray perspectives = new JSONArray();
-		JSONArray ditems = new JSONArray();
-		JSONArray ditemsLinks = new JSONArray();
-		int ditemId = 0;
-
-		for (String interest : uniqueInterests) {
-			try {
-				//get wikipedia page for interest and create an item in json format required by d3 concept map
-				Set<Integer> pageIds = new HashSet<>();
-				Set<Page> wbPages = new HashSet<>();
-
-				if (simpleWikiDb.existsPage(interest)) {
-					Page p = simpleWikiDb.getPage(interest);
-					wbPages.add(p);
-				} else {
-					String wbInterestToken = interest.trim().replaceAll("\\s+", "_");
-					for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(wbInterestToken)) {
-						pageIds.add(wpm.getPageId());
-					}
-					for (Integer pageId : pageIds) {
-						wbPages.add(simpleWikiDb.getPage(pageId));
-					}
-				}
-				for (Page p : wbPages) {
-					int pageId = p.getPageId();
-					if (!pageIdDItemMap.containsKey(p.getPageId())) {
-						JSONObject dItemJson = new JSONObject();
-						ditemId++;
-						dItemJson.put("type", "ditem");
-						dItemJson.put("name", p.getTitle().getEntity());
-						dItemJson.put("description", "Interest: " + p.getTitle().getEntity());
-						dItemJson.put("ditem", ditemId);
-						dItemJson.put("slug", "Page-" + p.getTitle().getEntity().replaceAll("\\s+", "-"));
-						dItemJson.put("pageId", pageId);
-						pageIdDItemMap.put(pageId, dItemJson);
-						pageCategoryMap.put(pageId, new HashSet<>());
-
-						//get parent categories for the wikipedia page and create themes for d3 concept map json
-						for (Category parentCategory : p.getCategories()) {
-							int parentCategoryPageId = parentCategory.getPageId();
-							if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryPageId)) {
-								continue;
-							}
-							if (pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								pageIdSiblingCountMap.remove(parentCategoryPageId);
-								pageIdSiblingThemeMap.remove(parentCategoryPageId);
-								pageIdDescendentCountMap.remove(parentCategoryPageId);
-								pageIdDescendentThemeMap.remove(parentCategoryPageId);
-							}
-
-							if (!pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-								JSONObject themeJson = new JSONObject();
-								themeJson.put("type", "theme");
-								themeJson.put("name", "Ctg: " + parentCategory.getTitle().getEntity());
-								themeJson.put("description",
-										"Parent Category : " + parentCategory.getTitle().getEntity());
-								themeJson.put("slug",
-										"Ctg-" + parentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-								pageIdParentThemeMap.put(parentCategoryPageId, themeJson);
-							}
-							Set<String> links = pageCategoryMap.get(pageId);
-							links.add("Ctg: " + parentCategory.getTitle().getEntity());
-
-							//for each category get sibling to be used for creating perspective for d3 concept map json
-							// these will be siblings of parent category... so in an abstract way, at the parent level as the interests provided by user
-							for (Category siblingCategory : parentCategory.getSiblings()) {
-								int siblingPageId = siblingCategory.getPageId();
-								if (WikipediaUtil.isGenericWikipediaCategory(siblingPageId)) {
-									continue;
-								}
-								if (!pageIdSiblingThemeMap.containsKey(siblingPageId)) {
-									JSONObject themeJson = new JSONObject();
-									themeJson.put("type", "theme");
-									themeJson.put("name", "SCtg: " + siblingCategory.getTitle().getEntity());
-									themeJson.put("description",
-											"Sibling Category : " + siblingCategory.getTitle().getEntity());
-									themeJson.put("slug",
-											"SCtg-" + siblingCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-									pageIdSiblingThemeMap.put(siblingPageId, themeJson);
-									pageIdSiblingCountMap.put(siblingPageId, 1);
-								} else if (pageIdSiblingCountMap.containsKey(siblingPageId)) {
-									pageIdSiblingCountMap.put(siblingPageId,
-											pageIdSiblingCountMap.get(siblingPageId) + 1);
-								}
-								links.add(pageIdSiblingThemeMap.get(siblingPageId).getString("name"));
-
-							}
-
-							//for each category get descendent to be used for creating perspective for d3 concept map json
-							// these will be descendents of parent category... so in an abstract way, at the same level as the interests provided by user
-							for (Category descendentCategory : parentCategory.getChildren()) {
-								int descendentPageId = descendentCategory.getPageId();
-								if (WikipediaUtil.isGenericWikipediaCategory(descendentPageId)) {
-									continue;
-								}
-								if (!pageIdDescendentThemeMap.containsKey(descendentPageId)) {
-									JSONObject themeJson = new JSONObject();
-									themeJson.put("type", "theme");
-									themeJson.put("name", "DCtg: " + descendentCategory.getTitle().getEntity());
-									themeJson.put("description",
-											"Descendent Category : " + descendentCategory.getTitle().getEntity());
-									themeJson.put("slug", "DCtg-"
-											+ descendentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-									pageIdDescendentThemeMap.put(descendentPageId, themeJson);
-									pageIdDescendentCountMap.put(descendentPageId, 1);
-								} else if (pageIdDescendentCountMap.containsKey(descendentPageId)) {
-									pageIdDescendentCountMap.put(descendentPageId,
-											pageIdDescendentCountMap.get(descendentPageId) + 1);
-								}
-								links.add(pageIdDescendentThemeMap.get(descendentPageId).getString("name"));
-
-							}
-						}
-
-					}
-				}
-
-			} catch (WikiApiException ex) {
-				log.debug(ExceptionUtils.getStackTrace(ex));
-
-			}
-
-		}
-
-		// create themes json array for d3 concept map (wikipedia categories)
-		Set<String> selectedCategoriesString = new HashSet<>();
-		for (Map.Entry<Integer, JSONObject> theme : pageIdParentThemeMap.entrySet()) {
-			themes.put(theme.getValue());
-			selectedCategoriesString.add(theme.getValue().getString("name"));
-		}
-
-		//create sibling json array for d3 concept map
-		int siblingCategorySizeLimit = pageIdParentThemeMap.size() / 2;
-		Object[] s = pageIdSiblingCountMap.entrySet().toArray();
-		Arrays.sort(s, new Comparator<Object>() {
-			public int compare(Object o1, Object o2) {
-				return ((Map.Entry<Integer, Integer>) o2).getValue()
-						.compareTo(((Map.Entry<Integer, Integer>) o1).getValue());
-			}
-		});
-
-		// add only perspectiveJsonSizeLimit perspectives which are common accross other categories
-
-		for (int iter = 0; iter < s.length && iter < siblingCategorySizeLimit; iter++) {
-			Map.Entry<Integer, Integer> entry = (Map.Entry<Integer, Integer>) s[iter];
-			JSONObject themeJson = pageIdSiblingThemeMap.get(entry.getKey());
-			themes.put(themeJson);
-			selectedCategoriesString.add(themeJson.getString("name"));
-		}
-
-		//create sibling json array for d3 concept map
-		int descendentCategorySizeLimit = pageIdParentThemeMap.size() / 2;
-		Object[] d = pageIdDescendentCountMap.entrySet().toArray();
-		Arrays.sort(d, new Comparator<Object>() {
-			public int compare(Object o1, Object o2) {
-				return ((Map.Entry<Integer, Integer>) o2).getValue()
-						.compareTo(((Map.Entry<Integer, Integer>) o1).getValue());
-			}
-		});
-
-		// add only perspectiveJsonSizeLimit perspectives which are common accross other categories
-
-		for (int iter = 0; iter < d.length && iter < descendentCategorySizeLimit; iter++) {
-			Map.Entry<Integer, Integer> entry = (Map.Entry<Integer, Integer>) d[iter];
-			JSONObject themeJson = pageIdDescendentThemeMap.get(entry.getKey());
-			themes.put(themeJson);
-			selectedCategoriesString.add(themeJson.getString("name"));
-		}
-		//create ditems json array for d3 concept map with links to descendent/parent categories
-		for (Map.Entry<Integer, JSONObject> ditem : pageIdDItemMap.entrySet()) {
-			JSONObject ditemJsonObject = ditem.getValue();
-			Set<String> allCategoryLinks = new HashSet<>(pageCategoryMap.get(ditemJsonObject.getInt("pageId")));
-			Set<String> refinedLinks = new HashSet<>(selectedCategoriesString);
-			refinedLinks.retainAll(allCategoryLinks);
-			// add links to ditem
-			ditemsLinks = new JSONArray(refinedLinks);
-			ditemJsonObject.put("links", ditemsLinks);
-			ditemJsonObject.remove("pageId");
-			ditems.put(ditem.getValue());
-		}
-		//categories
-		conceptMapJsonData.put("ditems", ditems);
-		//Interests
-		conceptMapJsonData.put("themes", themes);
-		conceptMapJsonData.put("perspectives", perspectives);
-		return conceptMapJsonData;
-	}
-
-	public JSONObject getConceptMapJsonForLatentParentCategories(List<WordCount> wordCounts)
+	public JSONObject getConceptMapJsonForLatentParentCategories(List<WordCount> wordCounts, int categoryCount)
 			throws WikiApiException, JSONException {
 		JSONObject conceptMapJsonData = new JSONObject();
-		Map<Integer, JSONObject> pageIdDItemMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdParentThemeMap = new HashMap<>();
-		Map<Integer, Set<String>> pageCategoryMap = new HashMap<>();
 		JSONArray themes = new JSONArray();
 		JSONArray perspectives = new JSONArray();
 		JSONArray ditems = new JSONArray();
-		Map<Integer, Category> categoryMap = new HashMap<>();
-		Map<Integer, Page> pageMap = new HashMap<>();
 		Map<Integer, Double> pageScore = new HashMap<>();
+		Map<Integer, String> pageName = new HashMap<>();
+		Map<Integer, Double> categoryScore = new HashMap<>();
+		Map<Integer, String> categoryName = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdCategoryId = new HashMap<>();
 		int ditemId = 0;
 		double sum = 0.0;
 		for (WordCount wc : wordCounts) {
@@ -687,114 +80,78 @@ public class WikipediaBasedIM {
 			}
 		}
 		pageScore = MapSortUtil.sortByValueDesc(pageScore);
+		int pageCounter = 0;
 		for (Map.Entry<Integer, Double> entry : pageScore.entrySet()) {
+			if (pageCounter >= COUNT_40) {
+				break;
+			}
+			pageCounter++;
 			Page p = simpleWikiDb.getPage(entry.getKey());
 			if (p.isDisambiguation()) {
 				continue;
 			}
-
-			int pageId = p.getPageId();
-			if (!pageIdDItemMap.containsKey(p.getPageId())) {
-				JSONObject dItemJson = new JSONObject();
-				JSONArray ditemsLinks = new JSONArray();
-				ditemId++;
-				dItemJson.put("type", "ditem");
-				dItemJson.put("name", p.getTitle().getEntity());
-				dItemJson.put("description", "Interest: " + p.getTitle().getEntity());
-				dItemJson.put("ditem", ditemId);
-				dItemJson.put("slug", "Page-" + p.getTitle().getEntity().replaceAll("\\s+", "-"));
-				dItemJson.put("pageId", pageId);
-				pageIdDItemMap.put(pageId, dItemJson);
-				pageCategoryMap.put(pageId, new HashSet<>());
-
-				//get parent categories for the wikipedia page and create themes for d3 concept map json
-				for (Category parentCategory : p.getCategories()) {
-					int parentCategoryPageId = parentCategory.getPageId();
-					if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryPageId)) {
-						continue;
-					}
-
-					if (!pageIdParentThemeMap.containsKey(parentCategoryPageId)) {
-						JSONObject themeJson = new JSONObject();
-						themeJson.put("type", "theme");
-						themeJson.put("name", "Ctg: " + parentCategory.getTitle().getEntity());
-						themeJson.put("description", "Parent Category : " + parentCategory.getTitle().getEntity());
-						themeJson.put("slug", "Ctg-" + parentCategory.getTitle().getEntity().replaceAll("\\s+", "-"));
-						ditemsLinks.put(themeJson.getString("name"));
-						pageIdParentThemeMap.put(parentCategoryPageId, themeJson);
-					} else {
-						ditemsLinks.put(pageIdParentThemeMap.get(parentCategoryPageId).getString("name"));
-					}
-
+			int pageId = entry.getKey();
+			if (!pageName.containsKey(pageId)) {
+				pageName.put(pageId, p.getTitle().getEntity());
+			}
+			if (!pageIdCategoryId.containsKey(pageId)) {
+				pageIdCategoryId.put(pageId, new HashSet<>());
+			}
+			for (Category parentCategory : p.getCategories()) {
+				int parentCategoryId = parentCategory.getPageId();
+				if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryId)) {
+					continue;
 				}
-				dItemJson.put("links", ditemsLinks);
-				ditems.put(dItemJson);
-
+				if (!categoryName.containsKey(parentCategoryId)) {
+					categoryName.put(parentCategoryId, parentCategory.getTitle().getEntity());
+				}
+				if (categoryScore.containsKey(parentCategoryId)) {
+					categoryScore.put(parentCategoryId, categoryScore.get(parentCategoryId) + pageScore.get(pageId));
+				} else {
+					categoryScore.put(parentCategoryId, pageScore.get(pageId));
+				}
+				pageIdCategoryId.get(pageId).add(parentCategoryId);
 			}
 
 		}
-		//categoryScore = MapSortUtil.sortByValueDesc(categoryScore);
-		//pageScore = MapSortUtil.sortByValueDesc(pageScore);
-		// create themes json array for d3 concept map (wikipedia categories)
-		for (Map.Entry<Integer, JSONObject> theme : pageIdParentThemeMap.entrySet()) {
-			themes.put(theme.getValue());
+		categoryScore = MapSortUtil.sortByValueDesc(categoryScore);
+		Map<Integer, Double> topCategories = new LinkedHashMap<>();
+		int categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : categoryScore.entrySet()) {
+			if (++categoryCounter > categoryCount) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "Ctg: " + catgoryName);
+			themeJson.put("description", "Parent Category : " + catgoryName);
+			themeJson.put("slug", "Ctg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.put(entry.getKey(), entry.getValue());
 		}
 
-		//categories
-		conceptMapJsonData.put("ditems", ditems);
-		//Interests
-		conceptMapJsonData.put("themes", themes);
-		//siblings
-		conceptMapJsonData.put("perspectives", perspectives);
-		return conceptMapJsonData;
-	}
-
-	private JSONObject createConceptMapJsonData(Map<Integer, Double> pageScore, Map<Integer, Double> categoryScore,
-			Map<Integer, Page> pageMap, Map<Integer, Category> categoryMap, Map<Integer, Set<Integer>> pageCategoryMap)
-			throws JSONException, WikiTitleParsingException {
-		JSONObject conceptMapJsonData = new JSONObject();
-		JSONArray themes = new JSONArray();
-		JSONArray perspectives = new JSONArray();
-		JSONArray ditems = new JSONArray();
-		Map<Integer, JSONObject> pageIdDItemMap = new HashMap<>();
-		Map<Integer, JSONObject> pageIdParentThemeMap = new HashMap<>();
-		int ditemId = 0;
-
-		for (Map.Entry<Integer, Double> pageEntry : pageScore.entrySet()) {
-			Page p = pageMap.get(pageEntry.getKey());
-			int pageId = p.getPageId();
+		for (Map.Entry<Integer, String> entry : pageName.entrySet()) {
+			//package ditems
+			ditemId++;
 			JSONObject dItemJson = new JSONObject();
 			JSONArray ditemsLinks = new JSONArray();
-			ditemId++;
 			dItemJson.put("type", "ditem");
-			dItemJson.put("name", p.getTitle().getEntity());
-			dItemJson.put("description", "Interest: " + p.getTitle().getEntity());
+			dItemJson.put("name", entry.getValue());
+			dItemJson.put("description", "Interest: " + entry.getValue());
 			dItemJson.put("ditem", ditemId);
-			dItemJson.put("slug", "Page-" + p.getTitle().getEntity().replaceAll("\\s+", "-"));
-			pageIdDItemMap.put(pageId, dItemJson);
-			for (Integer parentCategoryId : pageCategoryMap.get(pageId)) {
-				if (!pageIdParentThemeMap.containsKey(parentCategoryId)) {
-					JSONObject themeJson = new JSONObject();
-					themeJson.put("type", "theme");
-					themeJson.put("name", "Ctg: " + categoryMap.get(parentCategoryId).getTitle().getEntity());
-					themeJson.put("description",
-							"Parent Category : " + categoryMap.get(parentCategoryId).getTitle().getEntity());
-					themeJson.put("slug",
-							"Ctg-" + categoryMap.get(parentCategoryId).getTitle().getEntity().replaceAll("\\s+", "-"));
-					ditemsLinks.put(themeJson.getString("name"));
-					pageIdParentThemeMap.put(parentCategoryId, themeJson);
-				} else {
-					ditemsLinks.put(pageIdParentThemeMap.get(parentCategoryId).getString("name"));
+			dItemJson.put("slug", "Page-" + entry.getValue().replaceAll("\\s+", "-"));
+			for (int categoryId : pageIdCategoryId.get(entry.getKey())) {
+				if (!topCategories.containsKey(categoryId)) {
+					continue;
 				}
-
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("Ctg: " + catgoryName);
 			}
 			dItemJson.put("links", ditemsLinks);
 			ditems.put(dItemJson);
 		}
-		// create themes json array for d3 concept map (wikipedia categories)
-		for (Map.Entry<Integer, JSONObject> theme : pageIdParentThemeMap.entrySet()) {
-			themes.put(theme.getValue());
-		}
+
 		//categories
 		conceptMapJsonData.put("ditems", ditems);
 		//Interests
@@ -802,6 +159,586 @@ public class WikipediaBasedIM {
 		//siblings
 		conceptMapJsonData.put("perspectives", perspectives);
 		return conceptMapJsonData;
-
 	}
+
+	public JSONObject getConceptMapJsonForLatentParentDescendentCategories(List<WordCount> wordCounts,
+			int categoryCount, boolean filterCommonCategories) throws WikiApiException, JSONException {
+		JSONObject conceptMapJsonData = new JSONObject();
+		JSONArray themes = new JSONArray();
+		JSONArray perspectives = new JSONArray();
+		JSONArray ditems = new JSONArray();
+		Map<Integer, Double> pageScore = new HashMap<>();
+		Map<Integer, String> pageName = new HashMap<>();
+		Map<Integer, Double> categoryScore = new HashMap<>();
+		Map<Integer, Double> descCategoryScore = new HashMap<>();
+		Map<Integer, String> categoryName = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdCategoryId = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdDescCategoryId = new HashMap<>();
+		int ditemId = 0;
+		double sum = 0.0;
+		for (WordCount wc : wordCounts) {
+			sum += wc.getY();
+		}
+		for (WordCount wc : wordCounts) {
+			if (simpleWikiDb.existsPage(wc.getX())) {
+				Page p = simpleWikiDb.getPage(wc.getX());
+				if (pageScore.containsKey(p.getPageId())) {
+					pageScore.put(p.getPageId(), pageScore.get(p.getPageId()) + wc.getY() / sum);
+				} else {
+					pageScore.put(p.getPageId(), wc.getY() / sum);
+				}
+			} else {
+				Set<Integer> wpmPageIds = new HashSet<>();
+				List<WikiPagemapline> wpms = wikiPagemaplineRepository
+						.findByName(WikipediaUtil.toWikipediaArticleName(wc.getX()));
+				if (wpms.isEmpty()) {
+					wpms = wikiPagemaplineRepository.findByStem(WikipediaUtil.toWikipediaArticleStem(wc.getX()));
+				}
+				for (WikiPagemapline wpm : wpms) {
+					if (wpmPageIds.contains(wpm.getPageId())) {
+						continue;
+					}
+					wpmPageIds.add(wpm.getPageId());
+					if (pageScore.containsKey(wpm.getPageId())) {
+						pageScore.put(wpm.getPageId(), pageScore.get(wpm.getPageId()) + wc.getY() / sum);
+					} else {
+						pageScore.put(wpm.getPageId(), wc.getY() / sum);
+					}
+				}
+			}
+		}
+		pageScore = MapSortUtil.sortByValueDesc(pageScore);
+		int pageCounter = 0;
+		for (Map.Entry<Integer, Double> entry : pageScore.entrySet()) {
+			if (pageCounter >= COUNT_40) {
+				break;
+			}
+			pageCounter++;
+			Page p = simpleWikiDb.getPage(entry.getKey());
+			if (p.isDisambiguation()) {
+				continue;
+			}
+			int pageId = entry.getKey();
+			if (!pageName.containsKey(pageId)) {
+				pageName.put(pageId, p.getTitle().getEntity());
+			}
+			if (!pageIdCategoryId.containsKey(pageId)) {
+				pageIdCategoryId.put(pageId, new HashSet<>());
+			}
+			if (!pageIdDescCategoryId.containsKey(pageId)) {
+				pageIdDescCategoryId.put(pageId, new HashSet<>());
+			}
+			for (Category parentCategory : p.getCategories()) {
+				int parentCategoryId = parentCategory.getPageId();
+				if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryId)) {
+					continue;
+				}
+				if (!categoryName.containsKey(parentCategoryId)) {
+					categoryName.put(parentCategoryId, parentCategory.getTitle().getEntity());
+				}
+				if (categoryScore.containsKey(parentCategoryId)) {
+					categoryScore.put(parentCategoryId, categoryScore.get(parentCategoryId) + pageScore.get(pageId));
+				} else {
+					categoryScore.put(parentCategoryId, pageScore.get(pageId));
+				}
+				pageIdCategoryId.get(pageId).add(parentCategoryId);
+
+				//get descendent categories
+				for (Category descedentCategory : parentCategory.getChildren()) {
+					int descendentCategoryId = parentCategory.getPageId();
+					if (WikipediaUtil.isGenericWikipediaCategory(descendentCategoryId)) {
+						continue;
+					}
+					if (!categoryName.containsKey(descendentCategoryId)) {
+						categoryName.put(descendentCategoryId, descedentCategory.getTitle().getEntity());
+					}
+					if (descCategoryScore.containsKey(descendentCategoryId)) {
+						descCategoryScore.put(descendentCategoryId,
+								descCategoryScore.get(descendentCategoryId) + pageScore.get(pageId));
+					} else {
+						descCategoryScore.put(descendentCategoryId, pageScore.get(pageId));
+					}
+					pageIdDescCategoryId.get(pageId).add(descendentCategoryId);
+				}
+				descCategoryScore.remove(parentCategoryId);
+			}
+
+		}
+		categoryScore = MapSortUtil.sortByValueDesc(categoryScore);
+		descCategoryScore = MapSortUtil.sortByValueDesc(descCategoryScore);
+		Set<Integer> topCategories = new HashSet<>();
+		Set<Integer> parentCategories = new HashSet<>();
+		int categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : categoryScore.entrySet()) {
+			if (++categoryCounter > categoryCount) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "Ctg: " + catgoryName);
+			themeJson.put("description", "Parent Category : " + catgoryName);
+			themeJson.put("slug", "Ctg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+			parentCategories.add(entry.getKey());
+		}
+		categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : descCategoryScore.entrySet()) {
+			//filter parent categories
+			if (filterCommonCategories && parentCategories.contains(entry.getKey())) {
+				continue;
+			}
+			if (++categoryCounter > categoryCount / 2) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "DCtg: " + catgoryName);
+			themeJson.put("description", "Descendent Category : " + catgoryName);
+			themeJson.put("slug", "DCtg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+		}
+
+		for (Map.Entry<Integer, String> entry : pageName.entrySet()) {
+			//package ditems
+			ditemId++;
+			JSONObject dItemJson = new JSONObject();
+			JSONArray ditemsLinks = new JSONArray();
+			dItemJson.put("type", "ditem");
+			dItemJson.put("name", entry.getValue());
+			dItemJson.put("description", "Interest: " + entry.getValue());
+			dItemJson.put("ditem", ditemId);
+			dItemJson.put("slug", "Page-" + entry.getValue().replaceAll("\\s+", "-"));
+			for (int categoryId : pageIdCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("Ctg: " + catgoryName);
+			}
+			for (int categoryId : pageIdDescCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("DCtg: " + catgoryName);
+			}
+			dItemJson.put("links", ditemsLinks);
+			ditems.put(dItemJson);
+		}
+
+		//categories
+		conceptMapJsonData.put("ditems", ditems);
+		//Interests
+		conceptMapJsonData.put("themes", themes);
+		//siblings
+		conceptMapJsonData.put("perspectives", perspectives);
+		return conceptMapJsonData;
+	}
+
+	public JSONObject getConceptMapJsonForLatentParentSiblingCategories(List<WordCount> wordCounts, int categoryCount,
+			boolean filterCommonCategories) throws WikiApiException, JSONException {
+		JSONObject conceptMapJsonData = new JSONObject();
+		JSONArray themes = new JSONArray();
+		JSONArray perspectives = new JSONArray();
+		JSONArray ditems = new JSONArray();
+		Map<Integer, Double> pageScore = new HashMap<>();
+		Map<Integer, String> pageName = new HashMap<>();
+		Map<Integer, Double> categoryScore = new HashMap<>();
+		Map<Integer, Double> siblingCategoryScore = new HashMap<>();
+		Map<Integer, String> categoryName = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdCategoryId = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdSibCategoryId = new HashMap<>();
+		int ditemId = 0;
+		double sum = 0.0;
+		for (WordCount wc : wordCounts) {
+			sum += wc.getY();
+		}
+		for (WordCount wc : wordCounts) {
+			if (simpleWikiDb.existsPage(wc.getX())) {
+				Page p = simpleWikiDb.getPage(wc.getX());
+				if (pageScore.containsKey(p.getPageId())) {
+					pageScore.put(p.getPageId(), pageScore.get(p.getPageId()) + wc.getY() / sum);
+				} else {
+					pageScore.put(p.getPageId(), wc.getY() / sum);
+				}
+			} else {
+				Set<Integer> wpmPageIds = new HashSet<>();
+				List<WikiPagemapline> wpms = wikiPagemaplineRepository
+						.findByName(WikipediaUtil.toWikipediaArticleName(wc.getX()));
+				if (wpms.isEmpty()) {
+					wpms = wikiPagemaplineRepository.findByStem(WikipediaUtil.toWikipediaArticleStem(wc.getX()));
+				}
+				for (WikiPagemapline wpm : wpms) {
+					if (wpmPageIds.contains(wpm.getPageId())) {
+						continue;
+					}
+					wpmPageIds.add(wpm.getPageId());
+					if (pageScore.containsKey(wpm.getPageId())) {
+						pageScore.put(wpm.getPageId(), pageScore.get(wpm.getPageId()) + wc.getY() / sum);
+					} else {
+						pageScore.put(wpm.getPageId(), wc.getY() / sum);
+					}
+				}
+			}
+		}
+		pageScore = MapSortUtil.sortByValueDesc(pageScore);
+		int pageCounter = 0;
+		for (Map.Entry<Integer, Double> entry : pageScore.entrySet()) {
+			if (pageCounter >= COUNT_40) {
+				break;
+			}
+			pageCounter++;
+			Page p = simpleWikiDb.getPage(entry.getKey());
+			if (p.isDisambiguation()) {
+				continue;
+			}
+			int pageId = entry.getKey();
+			if (!pageName.containsKey(pageId)) {
+				pageName.put(pageId, p.getTitle().getEntity());
+			}
+			if (!pageIdCategoryId.containsKey(pageId)) {
+				pageIdCategoryId.put(pageId, new HashSet<>());
+			}
+			if (!pageIdSibCategoryId.containsKey(pageId)) {
+				pageIdSibCategoryId.put(pageId, new HashSet<>());
+			}
+			for (Category parentCategory : p.getCategories()) {
+				int parentCategoryId = parentCategory.getPageId();
+				if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryId)) {
+					continue;
+				}
+				if (!categoryName.containsKey(parentCategoryId)) {
+					categoryName.put(parentCategoryId, parentCategory.getTitle().getEntity());
+				}
+				if (categoryScore.containsKey(parentCategoryId)) {
+					categoryScore.put(parentCategoryId, categoryScore.get(parentCategoryId) + pageScore.get(pageId));
+				} else {
+					categoryScore.put(parentCategoryId, pageScore.get(pageId));
+				}
+				pageIdCategoryId.get(pageId).add(parentCategoryId);
+				//get sibling categories
+				for (Category siblingCategory : parentCategory.getSiblings()) {
+					int siblingCategoryId = parentCategory.getPageId();
+					if (WikipediaUtil.isGenericWikipediaCategory(siblingCategoryId)) {
+						continue;
+					}
+					if (!categoryName.containsKey(siblingCategoryId)) {
+						categoryName.put(siblingCategoryId, siblingCategory.getTitle().getEntity());
+					}
+					if (siblingCategoryScore.containsKey(siblingCategoryId)) {
+						siblingCategoryScore.put(siblingCategoryId,
+								siblingCategoryScore.get(siblingCategoryId) + pageScore.get(pageId));
+					} else {
+						siblingCategoryScore.put(siblingCategoryId, pageScore.get(pageId));
+					}
+					pageIdSibCategoryId.get(pageId).add(siblingCategoryId);
+				}
+
+			}
+
+		}
+		categoryScore = MapSortUtil.sortByValueDesc(categoryScore);
+		siblingCategoryScore = MapSortUtil.sortByValueDesc(siblingCategoryScore);
+		Set<Integer> topCategories = new HashSet<>();
+		Set<Integer> parentCategories = new HashSet<>();
+		int categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : categoryScore.entrySet()) {
+			if (++categoryCounter > categoryCount) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "Ctg: " + catgoryName);
+			themeJson.put("description", "Parent Category : " + catgoryName);
+			themeJson.put("slug", "Ctg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+			parentCategories.add(entry.getKey());
+		}
+		categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : siblingCategoryScore.entrySet()) {
+			//filter parent categories
+			if (filterCommonCategories && parentCategories.contains(entry.getKey())) {
+				continue;
+			}
+			if (++categoryCounter > categoryCount / 2) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "SCtg: " + catgoryName);
+			themeJson.put("description", "Sibling Category : " + catgoryName);
+			themeJson.put("slug", "SCtg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+		}
+
+		for (Map.Entry<Integer, String> entry : pageName.entrySet()) {
+			//package ditems
+			ditemId++;
+			JSONObject dItemJson = new JSONObject();
+			JSONArray ditemsLinks = new JSONArray();
+			dItemJson.put("type", "ditem");
+			dItemJson.put("name", entry.getValue());
+			dItemJson.put("description", "Interest: " + entry.getValue());
+			dItemJson.put("ditem", ditemId);
+			dItemJson.put("slug", "Page-" + entry.getValue().replaceAll("\\s+", "-"));
+			for (int categoryId : pageIdCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("Ctg: " + catgoryName);
+			}
+			for (int categoryId : pageIdSibCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("SCtg: " + catgoryName);
+			}
+
+			dItemJson.put("links", ditemsLinks);
+			ditems.put(dItemJson);
+		}
+
+		//categories
+		conceptMapJsonData.put("ditems", ditems);
+		//Interests
+		conceptMapJsonData.put("themes", themes);
+		//siblings
+		conceptMapJsonData.put("perspectives", perspectives);
+		return conceptMapJsonData;
+	}
+
+	public JSONObject getConceptMapJsonForLatentParentSiblingDescendentCategories(List<WordCount> wordCounts,
+			int categoryCount, boolean filterCommonCategories) throws WikiApiException, JSONException {
+		JSONObject conceptMapJsonData = new JSONObject();
+		JSONArray themes = new JSONArray();
+		JSONArray perspectives = new JSONArray();
+		JSONArray ditems = new JSONArray();
+		Map<Integer, Double> pageScore = new HashMap<>();
+		Map<Integer, String> pageName = new HashMap<>();
+		Map<Integer, Double> categoryScore = new HashMap<>();
+		Map<Integer, Double> siblingCategoryScore = new HashMap<>();
+		Map<Integer, Double> descendentCategoryScore = new HashMap<>();
+		Map<Integer, String> categoryName = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdCategoryId = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdDescCategoryId = new HashMap<>();
+		Map<Integer, Set<Integer>> pageIdSibCategoryId = new HashMap<>();
+		int ditemId = 0;
+		double sum = 0.0;
+		for (WordCount wc : wordCounts) {
+			sum += wc.getY();
+		}
+		for (WordCount wc : wordCounts) {
+			if (simpleWikiDb.existsPage(wc.getX())) {
+				Page p = simpleWikiDb.getPage(wc.getX());
+				if (pageScore.containsKey(p.getPageId())) {
+					pageScore.put(p.getPageId(), pageScore.get(p.getPageId()) + wc.getY() / sum);
+				} else {
+					pageScore.put(p.getPageId(), wc.getY() / sum);
+				}
+			} else {
+				Set<Integer> wpmPageIds = new HashSet<>();
+				List<WikiPagemapline> wpms = wikiPagemaplineRepository
+						.findByName(WikipediaUtil.toWikipediaArticleName(wc.getX()));
+				if (wpms.isEmpty()) {
+					wpms = wikiPagemaplineRepository.findByStem(WikipediaUtil.toWikipediaArticleStem(wc.getX()));
+				}
+				for (WikiPagemapline wpm : wpms) {
+					if (wpmPageIds.contains(wpm.getPageId())) {
+						continue;
+					}
+					wpmPageIds.add(wpm.getPageId());
+					if (pageScore.containsKey(wpm.getPageId())) {
+						pageScore.put(wpm.getPageId(), pageScore.get(wpm.getPageId()) + wc.getY() / sum);
+					} else {
+						pageScore.put(wpm.getPageId(), wc.getY() / sum);
+					}
+				}
+			}
+		}
+		pageScore = MapSortUtil.sortByValueDesc(pageScore);
+		int pageCounter = 0;
+		for (Map.Entry<Integer, Double> entry : pageScore.entrySet()) {
+			if (pageCounter >= COUNT_40) {
+				break;
+			}
+			pageCounter++;
+			Page p = simpleWikiDb.getPage(entry.getKey());
+			if (p.isDisambiguation()) {
+				continue;
+			}
+			int pageId = entry.getKey();
+			if (!pageName.containsKey(pageId)) {
+				pageName.put(pageId, p.getTitle().getEntity());
+			}
+			if (!pageIdCategoryId.containsKey(pageId)) {
+				pageIdCategoryId.put(pageId, new HashSet<>());
+			}
+			if (!pageIdSibCategoryId.containsKey(pageId)) {
+				pageIdSibCategoryId.put(pageId, new HashSet<>());
+			}
+			if (!pageIdDescCategoryId.containsKey(pageId)) {
+				pageIdDescCategoryId.put(pageId, new HashSet<>());
+			}
+			for (Category parentCategory : p.getCategories()) {
+				int parentCategoryId = parentCategory.getPageId();
+				if (WikipediaUtil.isGenericWikipediaCategory(parentCategoryId)) {
+					continue;
+				}
+				if (!categoryName.containsKey(parentCategoryId)) {
+					categoryName.put(parentCategoryId, parentCategory.getTitle().getEntity());
+				}
+				if (categoryScore.containsKey(parentCategoryId)) {
+					categoryScore.put(parentCategoryId, categoryScore.get(parentCategoryId) + pageScore.get(pageId));
+				} else {
+					categoryScore.put(parentCategoryId, pageScore.get(pageId));
+				}
+				pageIdCategoryId.get(pageId).add(parentCategoryId);
+				//get sibling categories
+				for (Category siblingCategory : parentCategory.getSiblings()) {
+					int siblingCategoryId = parentCategory.getPageId();
+					if (WikipediaUtil.isGenericWikipediaCategory(siblingCategoryId)) {
+						continue;
+					}
+					if (!categoryName.containsKey(siblingCategoryId)) {
+						categoryName.put(siblingCategoryId, siblingCategory.getTitle().getEntity());
+					}
+					if (siblingCategoryScore.containsKey(siblingCategoryId)) {
+						siblingCategoryScore.put(siblingCategoryId,
+								siblingCategoryScore.get(siblingCategoryId) + pageScore.get(pageId));
+					} else {
+						siblingCategoryScore.put(siblingCategoryId, pageScore.get(pageId));
+					}
+					pageIdSibCategoryId.get(pageId).add(siblingCategoryId);
+				}
+				//get descendent categories
+				for (Category descendentCategory : parentCategory.getChildren()) {
+					int descendentCategoryId = parentCategory.getPageId();
+					if (WikipediaUtil.isGenericWikipediaCategory(descendentCategoryId)) {
+						continue;
+					}
+					if (!categoryName.containsKey(descendentCategoryId)) {
+						categoryName.put(descendentCategoryId, descendentCategory.getTitle().getEntity());
+					}
+					if (descendentCategoryScore.containsKey(descendentCategoryId)) {
+						descendentCategoryScore.put(descendentCategoryId,
+								descendentCategoryScore.get(descendentCategoryId) + pageScore.get(pageId));
+					} else {
+						descendentCategoryScore.put(descendentCategoryId, pageScore.get(pageId));
+					}
+					pageIdDescCategoryId.get(pageId).add(descendentCategoryId);
+				}
+			}
+
+		}
+		categoryScore = MapSortUtil.sortByValueDesc(categoryScore);
+		siblingCategoryScore = MapSortUtil.sortByValueDesc(siblingCategoryScore);
+		descendentCategoryScore = MapSortUtil.sortByValueDesc(descendentCategoryScore);
+		Set<Integer> topCategories = new HashSet<>();
+		Set<Integer> parentCategories = new HashSet<>();
+		int categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : categoryScore.entrySet()) {
+
+			if (++categoryCounter > categoryCount) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "Ctg: " + catgoryName);
+			themeJson.put("description", "Parent Category : " + catgoryName);
+			themeJson.put("slug", "Ctg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+			parentCategories.add(entry.getKey());
+		}
+		categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : siblingCategoryScore.entrySet()) {
+			//filter parent categories
+			if (filterCommonCategories && parentCategories.contains(entry.getKey())) {
+				continue;
+			}
+			if (++categoryCounter > categoryCount / 2) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "SCtg: " + catgoryName);
+			themeJson.put("description", "Sibling Category : " + catgoryName);
+			themeJson.put("slug", "SCtg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+		}
+		categoryCounter = 0;
+		for (Map.Entry<Integer, Double> entry : descendentCategoryScore.entrySet()) {
+			if (filterCommonCategories && parentCategories.contains(entry.getKey())) {
+				continue;
+			}
+			if (++categoryCounter > categoryCount / 2) {
+				break;
+			}
+			String catgoryName = categoryName.get(entry.getKey());
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "DCtg: " + catgoryName);
+			themeJson.put("description", "Descendent Category : " + catgoryName);
+			themeJson.put("slug", "DCtg-" + catgoryName.replaceAll("\\s+", "-"));
+			themes.put(themeJson);
+			topCategories.add(entry.getKey());
+		}
+
+		for (Map.Entry<Integer, String> entry : pageName.entrySet()) {
+			//package ditems
+			ditemId++;
+			JSONObject dItemJson = new JSONObject();
+			JSONArray ditemsLinks = new JSONArray();
+			dItemJson.put("type", "ditem");
+			dItemJson.put("name", entry.getValue());
+			dItemJson.put("description", "Interest: " + entry.getValue());
+			dItemJson.put("ditem", ditemId);
+			dItemJson.put("slug", "Page-" + entry.getValue().replaceAll("\\s+", "-"));
+			for (int categoryId : pageIdCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("Ctg: " + catgoryName);
+			}
+			for (int categoryId : pageIdSibCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("SCtg: " + catgoryName);
+			}
+			for (int categoryId : pageIdDescCategoryId.get(entry.getKey())) {
+				if (!topCategories.contains(categoryId)) {
+					continue;
+				}
+				String catgoryName = categoryName.get(categoryId);
+				ditemsLinks.put("DCtg: " + catgoryName);
+			}
+			dItemJson.put("links", ditemsLinks);
+			ditems.put(dItemJson);
+		}
+
+		//categories
+		conceptMapJsonData.put("ditems", ditems);
+		//Interests
+		conceptMapJsonData.put("themes", themes);
+		//siblings
+		conceptMapJsonData.put("perspectives", perspectives);
+		return conceptMapJsonData;
+	}
+
 }

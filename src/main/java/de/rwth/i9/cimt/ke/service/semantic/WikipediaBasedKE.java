@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -146,6 +149,85 @@ public class WikipediaBasedKE {
 		} else {
 			return this.getkeywordsDefaultForAuthor(authorId, algorithmName, numKeywords);
 		}
+	}
+
+	public JSONObject getConceptMapJsonForKeywords(List<WordCount> wordCounts, int numKeywords)
+			throws WikiApiException, JSONException {
+		JSONObject conceptMapJsonData = new JSONObject();
+		JSONArray themes = new JSONArray();
+		JSONArray perspectives = new JSONArray();
+		JSONArray ditems = new JSONArray();
+		Map<Integer, String> idPage = new HashMap<>();
+
+		Map<String, Set<Integer>> kePages = new HashMap<>();
+
+		int ditemId = 0;
+		int count = 0;
+		for (WordCount wc : wordCounts) {
+			if (++count > numKeywords) {
+				break;
+			}
+			kePages.put(wc.getX(), new HashSet<>());
+			if (simpleWikiDb.existsPage(wc.getX())) {
+				Page p = simpleWikiDb.getPage(wc.getX());
+				kePages.get(wc.getX()).add(p.getPageId());
+				if (!idPage.containsKey(p.getPageId())) {
+					idPage.put(p.getPageId(), p.getTitle().getEntity());
+				}
+
+			} else {
+				Set<Integer> wpmPageIds = new HashSet<>();
+				List<WikiPagemapline> wpms = wikiPagemaplineRepository
+						.findByName(WikipediaUtil.toWikipediaArticleName(wc.getX()));
+				if (wpms.isEmpty()) {
+					wpms = wikiPagemaplineRepository.findByStem(WikipediaUtil.toWikipediaArticleStem(wc.getX()));
+				}
+				for (WikiPagemapline wpm : wpms) {
+					if (wpmPageIds.contains(wpm.getPageId())) {
+						continue;
+					}
+					wpmPageIds.add(wpm.getPageId());
+					Page p = simpleWikiDb.getPage(wpm.getPageId());
+					kePages.get(wc.getX()).add(p.getPageId());
+
+					if (!idPage.containsKey(p.getPageId())) {
+						idPage.put(p.getPageId(), p.getTitle().getEntity());
+					}
+				}
+			}
+		}
+
+		for (Map.Entry<Integer, String> entry : idPage.entrySet()) {
+			JSONObject themeJson = new JSONObject();
+			themeJson.put("type", "theme");
+			themeJson.put("name", "Page: " + entry.getValue());
+			themeJson.put("description", "Wikipedia Page : " + entry.getValue());
+			themeJson.put("slug", "Page: " + entry.getValue());
+			themes.put(themeJson);
+		}
+		for (Map.Entry<String, Set<Integer>> entry : kePages.entrySet()) {
+			JSONObject dItemJson = new JSONObject();
+			JSONArray ditemsLinks = new JSONArray();
+			dItemJson.put("type", "ditem");
+			dItemJson.put("name", entry.getKey());
+			dItemJson.put("description", "Interest: " + entry.getKey());
+			dItemJson.put("ditem", ++ditemId);
+			dItemJson.put("slug", entry.getKey());
+			for (int pageId : entry.getValue()) {
+				ditemsLinks.put("Page: " + idPage.get(pageId));
+			}
+			dItemJson.put("links", ditemsLinks);
+			ditems.put(dItemJson);
+
+		}
+
+		//categories
+		conceptMapJsonData.put("ditems", ditems);
+		//Interests
+		conceptMapJsonData.put("themes", themes);
+		//siblings
+		conceptMapJsonData.put("perspectives", perspectives);
+		return conceptMapJsonData;
 	}
 
 }

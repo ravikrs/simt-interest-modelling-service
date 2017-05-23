@@ -17,6 +17,15 @@ public class InterestRequestBody implements Serializable {
 	private String algorithmName;
 	private String latentInterestType;
 	private int numKeywords;
+	private boolean filterCommonCategory;
+
+	public boolean getFilterCommonCategory() {
+		return filterCommonCategory;
+	}
+
+	public void setFilterCommonCategory(boolean filterCommonCategory) {
+		this.filterCommonCategory = filterCommonCategory;
+	}
 
 	public int getNumKeywords() {
 		return numKeywords;

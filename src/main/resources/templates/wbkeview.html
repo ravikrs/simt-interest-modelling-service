@@ -10,30 +10,19 @@
 	<h1 layout:fragment="header">Keyphrase Extraction</h1>
 	<div layout:fragment="content" class="container">
 		<h1>Form</h1>
-		<form action="#" th:action="@{/interest/}" th:object="${interestRequestBody}"
+		<form action="#" th:action="@{/interest/kewb}" th:object="${interestRequestBody}"
 			method="post">
 			<p>
 				AuthorID : <input type="text" th:field="*{authorId}" />
 			</p>
 			<p>
-				Parent Category Count: <input type="text" th:field="*{numKeywords}" />
-			</p>
-			<p>
-				Filter Common Categories : <input type="checkbox" th:field="*{filterCommonCategory}"/>
+				Number of Interest : <input type="text" th:field="*{numKeywords}" />
 			</p>
 			<p>
 				Algorithm Name: <select id="algorithmName" name="algorithmName"
 					th:field="*{algorithmName}">
 					<option
 						th:each="algorithm : ${T(de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm).values()}"
-						th:value="${algorithm}" th:text="${algorithm}"></option>
-				</select>
-			</p>
-			<p>
-				Interest Type Name: <select id="latentInterestType" name="latentInterestType"
-					th:field="*{latentInterestType}">
-					<option
-						th:each="algorithm : ${T(de.rwth.i9.cimt.ke.constants.LatentInterests).values()}"
 						th:value="${algorithm}" th:text="${algorithm}"></option>
 				</select>
 			</p>
