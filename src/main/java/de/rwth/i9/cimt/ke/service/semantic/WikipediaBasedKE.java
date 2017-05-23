@@ -1,6 +1,7 @@
 package de.rwth.i9.cimt.ke.service.semantic;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,13 +13,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import de.rwth.i9.cimt.ke.constants.AuthorInterestType;
+import de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm;
 import de.rwth.i9.cimt.ke.lib.model.Keyword;
-import de.rwth.i9.cimt.ke.lib.util.NLPUtil;
-import de.rwth.i9.cimt.ke.lib.util.WikipediaUtil;
+import de.rwth.i9.cimt.ke.lib.util.WordCount;
+import de.rwth.i9.cimt.ke.model.eval.AuthorInterests;
 import de.rwth.i9.cimt.ke.model.wikipedia.WikiPagemapline;
+import de.rwth.i9.cimt.ke.repository.eval.AuthorInterestsRepository;
 import de.rwth.i9.cimt.ke.repository.wikipedia.WikiPagemaplineRepository;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
-import de.tudarmstadt.ukp.wikipedia.api.Category;
+import de.rwth.i9.cimt.ke.util.MapSortUtil;
+import de.rwth.i9.cimt.ke.util.WikipediaUtil;
 import de.tudarmstadt.ukp.wikipedia.api.Page;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
@@ -29,85 +33,119 @@ public class WikipediaBasedKE {
 
 	@Autowired
 	private Wikipedia simpleWikiDb;
-	@Autowired
-	OpenNLPImplSpring openNLPImplSpring;
 
 	@Autowired
 	WikiPagemaplineRepository wikiPagemaplineRepository;
 
-	public List<Keyword> performWBKE(String textContent) throws WikiApiException {
-		List<Keyword> returnedKeywords = new ArrayList<>();
-		//Map<String, Integer> candidateTokens = NLPUtil.splitTextByStopWords(textContent, openNLPImplSpring);
-		Map<String, List<Integer>> candidateTokens = NLPUtil.getNounAdjSeqToken(textContent, openNLPImplSpring);
-		Map<String, List<Page>> tokenPageMap = new HashMap<>();
-		for (Map.Entry<String, List<Integer>> entryToken : candidateTokens.entrySet()) {
-			List<Page> wikipediaPages = this.getWikipediPageForToken(entryToken.getKey());
-			if (!wikipediaPages.isEmpty()) {
-				tokenPageMap.put(entryToken.getKey(), wikipediaPages);
+	@Autowired
+	AuthorInterestsRepository authorInterestsRepo;
+
+	public List<Keyword> getkeywordsWBForAuthor(int authorId, KeyphraseExtractionAlgorithm algorithmName,
+			int numKeywords) throws WikiApiException {
+		List<Keyword> returnedKp = new ArrayList<>();
+		Map<Integer, Double> pageScore = new HashMap<>();
+		Map<Integer, String> pageName = new HashMap<>();
+		List<AuthorInterests> authorInterests = authorInterestsRepo.findByAuthorIdAndKeAlgorithm(authorId,
+				algorithmName.toString());
+		for (AuthorInterests authorInterest : authorInterests) {
+			List<WordCount> wordCounts = WordCount.parseIntoList(authorInterest.getAuthorInterest());
+			double sum = 0.0;
+			for (WordCount wc : wordCounts) {
+				sum += wc.getY();
 			}
-
-		}
-		Set<String> wikiPage = new HashSet<>();
-		Set<String> parentCategories = new HashSet<>();
-		Set<String> siblingCategories = new HashSet<>();
-
-		for (Map.Entry<String, List<Page>> entry : tokenPageMap.entrySet()) {
-			for (Page p : entry.getValue()) {
-				wikiPage.add(p.getTitle().getEntity());
-				for (Category c : p.getCategories()) {
-					if (!WikipediaUtil.isGenericWikipediaCategory(c.getPageId())) {
-						parentCategories.add(c.getTitle().getEntity());
+			for (WordCount wc : wordCounts) {
+				if (simpleWikiDb.existsPage(wc.getX())) {
+					Page p = simpleWikiDb.getPage(wc.getX());
+					// add normalised score of wikipages
+					if (pageScore.containsKey(p.getPageId())) {
+						pageScore.put(p.getPageId(), pageScore.get(p.getPageId()) + wc.getY() / sum);
+					} else {
+						pageScore.put(p.getPageId(), wc.getY() / sum);
+					}
+					if (!pageName.containsKey(p.getPageId())) {
+						pageName.put(p.getPageId(), p.getTitle().getEntity());
+					}
+				} else {
+					Set<Integer> wpmPageIds = new HashSet<>();
+					List<WikiPagemapline> wpms = wikiPagemaplineRepository
+							.findByName(WikipediaUtil.toWikipediaArticleName(wc.getX()));
+					if (wpms.isEmpty()) {
+						wpms = wikiPagemaplineRepository.findByStem(WikipediaUtil.toWikipediaArticleStem(wc.getX()));
+					}
+					for (WikiPagemapline wpm : wpms) {
+						if (wpmPageIds.contains(wpm.getPageId())) {
+							continue;
+						}
+						wpmPageIds.add(wpm.getPageId());
+						if (pageScore.containsKey(wpm.getPageId())) {
+							pageScore.put(wpm.getPageId(), pageScore.get(wpm.getPageId()) + wc.getY() / sum);
+						} else {
+							pageScore.put(wpm.getPageId(), wc.getY() / sum);
+						}
+					}
+					for (int wpmPageId : wpmPageIds) {
+						Page p = simpleWikiDb.getPage(wpmPageId);
+						if (!pageName.containsKey(p.getPageId())) {
+							pageName.put(p.getPageId(), p.getTitle().getEntity());
+						}
 					}
 				}
 			}
 		}
-		wikiPage.addAll(parentCategories);
-		for (String k : wikiPage) {
-			returnedKeywords.add(new Keyword(k, 0));
+
+		pageScore = MapSortUtil.sortByValueDesc(pageScore);
+		int counter = 0;
+		for (Map.Entry<Integer, Double> entry : pageScore.entrySet()) {
+			counter++;
+			Keyword kw = new Keyword(pageName.get(entry.getKey()), entry.getValue());
+			returnedKp.add(kw);
+			if (counter >= numKeywords)
+				break;
 		}
-		return returnedKeywords;
+
+		return returnedKp;
 
 	}
 
-	private List<Page> getWikipediPageForToken(String token) throws WikiApiException {
-		List<Page> pages = new ArrayList<>();
-		Set<Integer> pageIds = new HashSet<>();
-		if (token.isEmpty()) {
-			return pages;
-		}
-		String tokenWB = token.trim().replaceAll("\\s+", "_");
-		for (WikiPagemapline wpm : wikiPagemaplineRepository.findByName(tokenWB)) {
-			pageIds.add(wpm.getPageId());
-		}
-		if (pageIds.isEmpty()) {
-			String[] subtokens = token.split("\\s+");
-			int tokenSize = subtokens.length;
-			Set<String> subCandidates = NLPUtil.generateNgramsCandidate(token, tokenSize - 2, tokenSize - 1);
-			for (String subCandidate : subCandidates) {
-				if (!subCandidate.isEmpty()) {
-					List<Page> p = this.getWikipediPageForToken(subCandidate);
-					if (p != null && !p.isEmpty()) {
-						pages.addAll(p);
-					}
-				}
-
+	public List<Keyword> getkeywordsDefaultForAuthor(int authorId, KeyphraseExtractionAlgorithm algorithmName,
+			int numKeywords) {
+		List<Keyword> returnedKp = new ArrayList<>();
+		List<Keyword> keyphrases = new ArrayList<>();
+		List<AuthorInterests> authorInterests = authorInterestsRepo.findByAuthorIdAndKeAlgorithm(authorId,
+				algorithmName.toString());
+		for (AuthorInterests authorInterest : authorInterests) {
+			List<WordCount> wordCounts = WordCount.parseIntoList(authorInterest.getAuthorInterest());
+			double sum = 0.0;
+			for (WordCount wc : wordCounts) {
+				sum += wc.getY();
 			}
-			return pages;
 
+			for (WordCount wc : wordCounts) {
+				Keyword kw = new Keyword(wc.getX(), wc.getY() / sum);
+				keyphrases.add(kw);
+			}
+		}
+		Collections.sort(keyphrases, Keyword.KeywordComparatorDesc);
+		int counter = 0;
+		for (Keyword kw : keyphrases) {
+			counter++;
+			returnedKp.add(kw);
+			if (counter >= numKeywords)
+				break;
+		}
+		return returnedKp;
+
+	}
+
+	public List<Keyword> getkeywordsForAuthor(int authorId, KeyphraseExtractionAlgorithm algorithmName, int numKeywords,
+			String authorInterestType) throws WikiApiException {
+
+		AuthorInterestType interestType = AuthorInterestType.fromString(authorInterestType);
+		if (interestType.equals(AuthorInterestType.WIKIPEDIA_BASED)) {
+			return this.getkeywordsWBForAuthor(authorId, algorithmName, numKeywords);
 		} else {
-			for (Integer pageId : pageIds) {
-				Page p = this.simpleWikiDb.getPage(pageId);
-				pages.add(p);
-			}
-			return pages;
+			return this.getkeywordsDefaultForAuthor(authorId, algorithmName, numKeywords);
 		}
-
-	}
-
-	public List<WikiPagemapline> getPageIdForTitle(String title) {
-		title = title.trim().replaceAll("\\s+", "_");
-		return wikiPagemaplineRepository.findByName(title);
-
 	}
 
 }
