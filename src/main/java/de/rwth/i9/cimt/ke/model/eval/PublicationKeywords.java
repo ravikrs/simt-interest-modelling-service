@@ -14,11 +14,11 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "publication_keywords", catalog = "enwikidb", uniqueConstraints = @UniqueConstraint(columnNames = {
-		"publication_id", "ke_algorithm" }))
+		"publication_id", "ke_algorithm", "is_wikipedia_based" }))
 public class PublicationKeywords implements java.io.Serializable {
 
 	private Integer id;
-	private Boolean isDefault;
+	private Boolean isWikipediaBased;
 	private String keAlgorithm;
 	private String keywordTokens;
 	private Integer publicationId;
@@ -27,7 +27,7 @@ public class PublicationKeywords implements java.io.Serializable {
 	}
 
 	public PublicationKeywords(Boolean isDefault, String keAlgorithm, String keywordTokens, Integer publicationId) {
-		this.isDefault = isDefault;
+		this.isWikipediaBased = isDefault;
 		this.keAlgorithm = keAlgorithm;
 		this.keywordTokens = keywordTokens;
 		this.publicationId = publicationId;
@@ -45,13 +45,13 @@ public class PublicationKeywords implements java.io.Serializable {
 		this.id = id;
 	}
 
-	@Column(name = "is_default")
-	public Boolean getIsDefault() {
-		return this.isDefault;
+	@Column(name = "is_wikipedia_based")
+	public Boolean getIsWikipediaBased() {
+		return this.isWikipediaBased;
 	}
 
-	public void setIsDefault(Boolean isDefault) {
-		this.isDefault = isDefault;
+	public void setIsWikipediaBased(Boolean isDefault) {
+		this.isWikipediaBased = isDefault;
 	}
 
 	@Column(name = "ke_algorithm", length = 50)

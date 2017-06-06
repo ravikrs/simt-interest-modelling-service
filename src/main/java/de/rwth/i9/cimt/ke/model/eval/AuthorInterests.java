@@ -14,13 +14,14 @@ import javax.persistence.UniqueConstraint;
  */
 @Entity
 @Table(name = "author_interests", catalog = "enwikidb", uniqueConstraints = @UniqueConstraint(columnNames = {
-		"author_id", "ke_algorithm" }))
+		"author_id", "ke_algorithm", "interest_type" }))
 public class AuthorInterests implements java.io.Serializable {
 
 	private Integer id;
 	private Integer authorId;
 	private String authorInterest;
 	private String keAlgorithm;
+	private String interestType;
 
 	public AuthorInterests() {
 	}
@@ -68,6 +69,15 @@ public class AuthorInterests implements java.io.Serializable {
 
 	public void setKeAlgorithm(String keAlgorithm) {
 		this.keAlgorithm = keAlgorithm;
+	}
+
+	@Column(name = "interest_type", length = 50)
+	public String getInterestType() {
+		return this.interestType;
+	}
+
+	public void setInterestType(String interestType) {
+		this.interestType = interestType;
 	}
 
 }

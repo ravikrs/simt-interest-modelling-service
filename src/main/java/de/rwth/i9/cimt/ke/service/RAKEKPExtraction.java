@@ -25,9 +25,9 @@ public class RAKEKPExtraction {
 		int keywordCount = 0;
 		totalKeywords = Rake.extractKeyword(text, openNLPImplSpring);
 		for (Keyword keyword : totalKeywords) {
-			keywords.add(keyword);
 			if (++keywordCount > numKeywords)
 				break;
+			keywords.add(keyword);
 		}
 		log.info("RAKE KeyphraseExtraction");
 		return keywords;

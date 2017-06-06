@@ -1,5 +1,7 @@
 package de.rwth.i9.cimt.ke.controller;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.tika.utils.ExceptionUtils;
@@ -20,6 +22,10 @@ import org.springframework.web.servlet.ModelAndView;
 import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.cimt.ke.service.KPExtraction;
+import de.rwth.i9.cimt.ke.service.eval.AuthorInterestExtractorService;
+import de.rwth.i9.cimt.ke.service.eval.FScoreComputeService;
+import de.rwth.i9.cimt.ke.service.eval.KEExtractionService;
+import de.rwth.i9.cimt.ke.service.eval.SqlCorpusImporter;
 import de.rwth.i9.cimt.ke.service.topic.TopicalPageRankKPExtraction;
 
 @Configuration
@@ -31,6 +37,17 @@ public class HomeController {
 	KPExtraction kpExtraction;
 	@Autowired
 	TopicalPageRankKPExtraction topicalPageRankKPExtraction;
+	@Autowired
+	KEExtractionService keExtractionService;
+
+	@Autowired
+	SqlCorpusImporter sqlCorpusImporter;
+
+	@Autowired
+	AuthorInterestExtractorService authorInterestExtractorService;
+
+	@Autowired
+	FScoreComputeService fScoreComputeService;
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView getKE(Model model) {
@@ -75,4 +92,41 @@ public class HomeController {
 		return kpExtraction.extractKeyword(textbody.getText(), textbody.getAlgorithmName(), numKeywords);
 	}
 
+	@RequestMapping(value = "/ke", method = RequestMethod.GET)
+	public String getKE1(Model model) {
+		log.info("Inside the getKPTR");
+		model.addAttribute("textbody", new Textbody());
+		//keExtractionService.runKEAlgorithm();
+		return "Done";
+	}
+
+	@RequestMapping(value = "/ke1", method = RequestMethod.GET)
+	public String getKE21() {
+		//authorInterestExtractorService.performInterestMingingForAllAuthors();
+		return "Done";
+	}
+
+	@RequestMapping(value = "/inspec", method = RequestMethod.GET)
+	public String getInspec() throws FileNotFoundException, IOException {
+		//sqlCorpusImporter.runCorpusImporter();
+		return "Done";
+	}
+
+	@RequestMapping(value = "/inspecupd", method = RequestMethod.GET)
+	public String updateInspec() throws FileNotFoundException, IOException {
+		//sqlCorpusImporter.updateKeywords();
+		return "Done";
+	}
+
+	@RequestMapping(value = "/fscore", method = RequestMethod.GET)
+	public String computeFScore() throws FileNotFoundException, IOException {
+		//fScoreComputeService.computeFScore();
+		return "Done";
+	}
+
+	@RequestMapping(value = "/fscoreavg", method = RequestMethod.GET)
+	public String computeAverageFScore() throws FileNotFoundException, IOException {
+		fScoreComputeService.computeAverageFScore();
+		return "Done";
+	}
 }

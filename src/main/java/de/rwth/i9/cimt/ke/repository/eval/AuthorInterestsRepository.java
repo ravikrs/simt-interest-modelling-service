@@ -11,5 +11,6 @@ public interface AuthorInterestsRepository extends PagingAndSortingRepository<Au
 
 	List<AuthorInterests> findById(Integer id);
 
-	List<AuthorInterests> findByAuthorIdAndKeAlgorithm(Integer authorId, String keAlgorithm);
+	List<AuthorInterests> findByAuthorIdAndKeAlgorithmAndInterestType(Integer authorId, String keAlgorithm,
+			String interestType);
 }

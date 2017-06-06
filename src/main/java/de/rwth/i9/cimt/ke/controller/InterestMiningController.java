@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
+import de.rwth.i9.cimt.ke.constants.AuthorInterestType;
 import de.rwth.i9.cimt.ke.constants.LatentInterests;
 import de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm;
 import de.rwth.i9.cimt.ke.lib.model.Keyword;
@@ -63,36 +64,41 @@ public class InterestMiningController {
 			throws JSONException, WikiApiException {
 
 		KeyphraseExtractionAlgorithm ke = KeyphraseExtractionAlgorithm.fromString(interestReqBody.getAlgorithmName());
-		List<AuthorInterests> interests = authorInterestRepository
-				.findByAuthorIdAndKeAlgorithm(interestReqBody.getAuthorId(), ke.toString());
+		List<AuthorInterests> interests = authorInterestRepository.findByAuthorIdAndKeAlgorithmAndInterestType(
+				interestReqBody.getAuthorId(), ke.toString(), "WIKIPEDIA_BASED");
 		List<WordCount> wcs = new ArrayList<>();
+		int maxNum = interestReqBody.getNumKeywords();
+		int count = 0;
 		for (AuthorInterests authInt : interests) {
-			wcs.addAll(WordCount.parseIntoList(authInt.getAuthorInterest()));
+			for (WordCount wc : WordCount.parseIntoList(authInt.getAuthorInterest())) {
+				if (++count >= maxNum) {
+					break;
+				}
+				wcs.add(wc);
+			}
 		}
 
 		JSONObject jsonRet = new JSONObject();
 		LatentInterests conceptMapType = LatentInterests.fromString(interestReqBody.getLatentInterestType());
 		switch (conceptMapType) {
 		case CTG_PARENT:
-			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs,
-					interestReqBody.getNumKeywords());
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs, 15);
 			break;
 		case CTG_PARENT_SIBLING:
-			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentSiblingCategories(wcs,
-					interestReqBody.getNumKeywords(), interestReqBody.getFilterCommonCategory());
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentSiblingCategories(wcs, 15,
+					interestReqBody.getFilterCommonCategory());
 			break;
 		case CTG_PARENT_DESCENDENT:
-			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentDescendentCategories(wcs,
-					interestReqBody.getNumKeywords(), interestReqBody.getFilterCommonCategory());
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentDescendentCategories(wcs, 15,
+					interestReqBody.getFilterCommonCategory());
 			break;
 		case CTG_PARENT_SIBLING_DESCENDENT:
-			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentSiblingDescendentCategories(wcs,
-					interestReqBody.getNumKeywords(), interestReqBody.getFilterCommonCategory());
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentSiblingDescendentCategories(wcs, 15,
+					interestReqBody.getFilterCommonCategory());
 			break;
 
 		case DEFAULT:
-			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs,
-					interestReqBody.getNumKeywords());
+			jsonRet = wikipediaBasedIM.getConceptMapJsonForLatentParentCategories(wcs, 15);
 		}
 		model.addAttribute("conceptjson", jsonRet.toString());
 		return new ModelAndView("wbimview", "model", model);
@@ -110,8 +116,9 @@ public class InterestMiningController {
 			throws JSONException, WikiApiException {
 
 		KeyphraseExtractionAlgorithm ke = KeyphraseExtractionAlgorithm.fromString(interestReqBody.getAlgorithmName());
-		List<AuthorInterests> interests = authorInterestRepository
-				.findByAuthorIdAndKeAlgorithm(interestReqBody.getAuthorId(), ke.toString());
+		List<AuthorInterests> interests = authorInterestRepository.findByAuthorIdAndKeAlgorithmAndInterestType(
+				interestReqBody.getAuthorId(), ke.toString(), AuthorInterestType.DEFAULT.toString());
+
 		List<WordCount> wcs = new ArrayList<>();
 		for (AuthorInterests authInt : interests) {
 			wcs.addAll(WordCount.parseIntoList(authInt.getAuthorInterest()));
@@ -171,8 +178,8 @@ public class InterestMiningController {
 			numKeywords = 15;
 		}
 		List<Keyword> keywords = wikipediaBasedKE.getkeywordsForAuthor(interestRequestBody.getAuthorId(),
-				KeyphraseExtractionAlgorithm.fromString(interestRequestBody.getAlgorithmName()), numKeywords,
-				interestRequestBody.getLatentInterestType());
+				KeyphraseExtractionAlgorithm.fromString(interestRequestBody.getAlgorithmName()),
+				AuthorInterestType.fromString(interestRequestBody.getLatentInterestType()), numKeywords);
 		try {
 			JSONArray jsonResp = new JSONArray();
 			JSONObject obj;
