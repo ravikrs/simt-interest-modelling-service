@@ -3,13 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>de.rwth.i9.cimt</groupId>
-	<artifactId>cimt-keyphrase-extraction</artifactId>
+	<groupId>de.rwth.i9.simt</groupId>
+	<artifactId>simt-interest-modelling-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
-	<name>cimt-keyphrase-extraction</name>
-	<description>Semantic Keyphrase Extraction Toolkit</description>
+	<name>simt-interest-modelling-service</name>
+	<description>SIMT Interest Modelling Service</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
