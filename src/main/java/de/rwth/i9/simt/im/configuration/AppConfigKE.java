@@ -25,7 +25,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
-@ComponentScan({ "de.rwth.i9.cimt.**" })
+@ComponentScan({ "de.rwth.i9.simt.**" })
 @PropertySource("classpath:opennlp.properties")
 @Lazy(true)
 @EnableSwagger2
