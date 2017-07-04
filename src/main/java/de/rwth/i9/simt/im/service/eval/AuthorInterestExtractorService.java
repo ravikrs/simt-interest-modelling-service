@@ -292,4 +292,35 @@ public class AuthorInterestExtractorService {
 
 	}
 
+	public Set<String> getReducedInterestsFromWikipedia(Set<String> interests) throws WikiApiException {
+		Set<String> reducedInterests = new HashSet<>();
+		if (interests == null || interests.isEmpty()) {
+			return reducedInterests;
+		}
+		for (String interest : interests) {
+
+			if (simpleWikiDb.existsPage(interest)) {
+				de.tudarmstadt.ukp.wikipedia.api.Page p = simpleWikiDb.getPage(interest);
+				reducedInterests.add(p.getTitle().getEntity());
+			} else {
+				Set<Integer> wpmPageIds = new HashSet<>();
+				List<WikiPagemapline> wpms = wikiPagemaplineRepository
+						.findByName(WikipediaUtil.toWikipediaArticleName(interest));
+				for (WikiPagemapline wpm : wpms) {
+					if (wpmPageIds.contains(wpm.getPageId())) {
+						continue;
+					}
+					wpmPageIds.add(wpm.getPageId());
+
+				}
+				for (int wpmPageId : wpmPageIds) {
+					de.tudarmstadt.ukp.wikipedia.api.Page p = simpleWikiDb.getPage(wpmPageId);
+					reducedInterests.add(p.getTitle().getEntity());
+				}
+			}
+
+		}
+		return reducedInterests;
+
+	}
 }

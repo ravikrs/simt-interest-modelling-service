@@ -32,8 +32,10 @@ import de.rwth.i9.simt.ke.lib.model.Textbody;
 import de.rwth.i9.simt.ke.lib.util.WordCount;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
+@ApiIgnore
 public class InterestMiningController {
 
 	private static final Logger log = LoggerFactory.getLogger(InterestMiningController.class);
@@ -129,14 +131,14 @@ public class InterestMiningController {
 		return new ModelAndView("wbkeview", "model", model);
 	}
 
-	@RequestMapping(value = "/conceptmap", method = RequestMethod.GET)
+	//	@RequestMapping(value = "/conceptmap", method = RequestMethod.GET)
 	public ModelAndView getConceptMap(Model model) {
 		log.info("Inside the getConceptMap");
 		model.addAttribute("textbody", new Textbody());
 		return new ModelAndView("conceptmap", "model", "objectName");
 	}
 
-	@RequestMapping(value = "/conceptmap", method = RequestMethod.POST)
+	//@RequestMapping(value = "/conceptmap", method = RequestMethod.POST)
 	public ModelAndView postConceptMap(Model model, @ModelAttribute Textbody textbody) throws JSONException {
 		log.info("Inside the postConceptMap");
 		String[] tokens = textbody.getText().split(",");

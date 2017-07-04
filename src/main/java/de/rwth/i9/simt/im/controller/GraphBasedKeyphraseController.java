@@ -18,9 +18,11 @@ import de.rwth.i9.simt.im.service.graph.TextRankKPExtraction;
 import de.rwth.i9.simt.im.service.graph.TopicRankKPExtraction;
 import de.rwth.i9.simt.ke.lib.model.Keyword;
 import de.rwth.i9.simt.ke.lib.model.Textbody;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 @RequestMapping("/kpextraction/graph")
+@ApiIgnore
 public class GraphBasedKeyphraseController {
 	private static final Logger log = LoggerFactory.getLogger(GraphBasedKeyphraseController.class);
 

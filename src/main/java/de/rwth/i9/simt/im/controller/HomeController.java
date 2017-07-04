@@ -34,6 +34,7 @@ import de.rwth.i9.simt.im.service.topic.TopicalPageRankKPExtraction;
 import de.rwth.i9.simt.ke.lib.model.Keyword;
 import de.rwth.i9.simt.ke.lib.model.Textbody;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
+import springfox.documentation.annotations.ApiIgnore;
 
 @Configuration
 @RestController
@@ -59,14 +60,14 @@ public class HomeController {
 	RecoService recoService;
 
 	public enum RecoSimilarityAlgorithm {
-		Default, Reduced, Metrics, Parent, Sibling, Descendent,;
+		Default, Reduced, WikiLink, Parent, Sibling, Descendent,;
 		public static RecoSimilarityAlgorithm fromString(String value) {
 			if ("Default".equalsIgnoreCase(value))
 				return Default;
 			if ("Reduced".equalsIgnoreCase(value))
 				return Reduced;
-			if ("Metrics".equalsIgnoreCase(value))
-				return Metrics;
+			if ("WikiLink".equalsIgnoreCase(value))
+				return WikiLink;
 			if ("Parent".equalsIgnoreCase(value))
 				return Parent;
 			if ("Sibling".equalsIgnoreCase(value))
@@ -79,6 +80,7 @@ public class HomeController {
 	}
 
 	@RequestMapping(value = "/", method = RequestMethod.GET)
+	@ApiIgnore
 	public ModelAndView getKE(Model model) {
 		log.info("Inside the getKPTR");
 		model.addAttribute("textbody", new Textbody());
@@ -86,6 +88,7 @@ public class HomeController {
 	}
 
 	@RequestMapping(value = "/", method = RequestMethod.POST)
+	@ApiIgnore
 	public ModelAndView postKE(Model model, @ModelAttribute Textbody textbody) {
 		log.info("Inside the getKPTR");
 		int numKeywords = Integer.parseInt(textbody.getNumKeywords());
@@ -121,7 +124,8 @@ public class HomeController {
 		return kpExtraction.extractKeyword(textbody.getText(), textbody.getAlgorithmName(), numKeywords);
 	}
 
-	@RequestMapping(value = "/ke", method = RequestMethod.GET)
+	//@RequestMapping(value = "/ke", method = RequestMethod.GET)
+	//@ApiIgnore
 	public String getKE1(Model model) {
 		log.info("Inside the getKPTR");
 		model.addAttribute("textbody", new Textbody());
@@ -129,37 +133,42 @@ public class HomeController {
 		return "Done";
 	}
 
-	@RequestMapping(value = "/ke1", method = RequestMethod.GET)
+	//@RequestMapping(value = "/ke1", method = RequestMethod.GET)
+	//@ApiIgnore
 	public String getKE21() {
 		//authorInterestExtractorService.performInterestMingingForAllAuthors();
 		return "Done";
 	}
 
-	@RequestMapping(value = "/inspec", method = RequestMethod.GET)
+	//@RequestMapping(value = "/inspec", method = RequestMethod.GET)
+	//@ApiIgnore
 	public String getInspec() throws FileNotFoundException, IOException {
 		//sqlCorpusImporter.runCorpusImporter();
 		return "Done";
 	}
 
-	@RequestMapping(value = "/inspecupd", method = RequestMethod.GET)
+	//@RequestMapping(value = "/inspecupd", method = RequestMethod.GET)
+	//@ApiIgnore
 	public String updateInspec() throws FileNotFoundException, IOException {
 		//sqlCorpusImporter.updateKeywords();
 		return "Done";
 	}
 
-	@RequestMapping(value = "/fscore", method = RequestMethod.GET)
+	//@RequestMapping(value = "/fscore", method = RequestMethod.GET)
+	//@ApiIgnore
 	public String computeFScore() throws FileNotFoundException, IOException {
 		//fScoreComputeService.computeFScore();
 		return "Done";
 	}
 
-	@RequestMapping(value = "/fscoreavg", method = RequestMethod.GET)
+	//@RequestMapping(value = "/fscoreavg", method = RequestMethod.GET)
+	//@ApiIgnore
 	public String computeAverageFScore() throws FileNotFoundException, IOException {
-		fScoreComputeService.computeAverageFScore();
+		//	fScoreComputeService.computeAverageFScore();
 		return "Done";
 	}
 
-	@RequestMapping(value = "/cb", method = RequestMethod.POST)
+	@RequestMapping(value = "/similarity/cosine", method = RequestMethod.POST)
 	public List<Double> computeCSSimilarity(@RequestBody SimilarityVector sv) throws WikiApiException {
 		List<Double> scores = new ArrayList<>();
 		double score = 0.0;
@@ -184,14 +193,18 @@ public class HomeController {
 		case Descendent:
 			scores = recoService.computeDescendent(setA, setB, true);
 			break;
-
+		case WikiLink:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
+			score = recoService.computeWikiLink(setA, setB, true);
+			scores.add(score);
 		default:
 			break;
 		}
 		return scores;
 	}
 
-	@RequestMapping(value = "/pb", method = RequestMethod.POST)
+	@RequestMapping(value = "/similarity/pearson", method = RequestMethod.POST)
 	public List<Double> computePBSimilarity(@RequestBody SimilarityVector sv) throws WikiApiException {
 		List<Double> scores = new ArrayList<>();
 		double score = 0.0;
@@ -204,23 +217,40 @@ public class HomeController {
 			scores.add(score);
 			break;
 		case Reduced:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			score = recoService.computeDefaultorReduced(setA, setB, false);
 			scores.add(score);
 			break;
 		case Parent:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			scores = recoService.computeParent(setA, setB, false);
 			break;
 		case Sibling:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			scores = recoService.computeSibling(setA, setB, false);
 			break;
 		case Descendent:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			scores = recoService.computeDescendent(setA, setB, false);
 			break;
-
+		case WikiLink:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
+			score = recoService.computeWikiLink(setA, setB, false);
+			scores.add(score);
 		default:
 			break;
 		}
 		return scores;
 	}
 
+	@RequestMapping(value = "/interest/reduce", method = RequestMethod.POST)
+	public List<String> computePBSimilarity(@RequestBody List<String> interests) throws WikiApiException {
+		return new ArrayList<>(
+				authorInterestExtractorService.getReducedInterestsFromWikipedia(new HashSet<>(interests)));
+	}
 }

@@ -265,4 +265,5 @@ public class KEExtractionService {
 		return normInterests;
 
 	}
+
 }

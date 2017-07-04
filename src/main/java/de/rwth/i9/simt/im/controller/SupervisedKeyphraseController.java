@@ -18,9 +18,11 @@ import de.rwth.i9.simt.im.service.JATEKPExtraction;
 import de.rwth.i9.simt.im.service.RAKEKPExtraction;
 import de.rwth.i9.simt.ke.lib.model.Keyword;
 import de.rwth.i9.simt.ke.lib.model.Textbody;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 @RequestMapping("/kpextraction")
+@ApiIgnore
 public class SupervisedKeyphraseController {
 	private static final Logger log = LoggerFactory.getLogger(SupervisedKeyphraseController.class);
 	@Autowired

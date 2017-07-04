@@ -31,3 +31,4 @@ dist/
 nbdist/
 .nb-gradle/
 /jate.log
+/WikipediaInlinkCache_english_null

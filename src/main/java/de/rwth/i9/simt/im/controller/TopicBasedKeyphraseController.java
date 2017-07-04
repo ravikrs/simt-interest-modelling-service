@@ -18,9 +18,11 @@ import de.rwth.i9.simt.im.service.topic.KeyClusterKPExtraction;
 import de.rwth.i9.simt.im.service.topic.TopicalPageRankKPExtraction;
 import de.rwth.i9.simt.ke.lib.model.Keyword;
 import de.rwth.i9.simt.ke.lib.model.Textbody;
+import springfox.documentation.annotations.ApiIgnore;
 
 @RestController
 @RequestMapping("/kpextraction/topic")
+@ApiIgnore
 public class TopicBasedKeyphraseController {
 	private static final Logger log = LoggerFactory.getLogger(SupervisedKeyphraseController.class);
 	@Autowired
