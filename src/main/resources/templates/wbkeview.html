@@ -22,7 +22,7 @@
 				Algorithm Name: <select id="algorithmName" name="algorithmName"
 					th:field="*{algorithmName}">
 					<option
-						th:each="algorithm : ${T(de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm).values()}"
+						th:each="algorithm : ${T(de.rwth.i9.simt.ke.lib.constants.KeyphraseExtractionAlgorithm).values()}"
 						th:value="${algorithm}" th:text="${algorithm}"></option>
 				</select>
 			</p>

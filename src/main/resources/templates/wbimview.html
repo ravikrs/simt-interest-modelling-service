@@ -25,7 +25,7 @@
 				Algorithm Name: <select id="algorithmName" name="algorithmName"
 					th:field="*{algorithmName}">
 					<option
-						th:each="algorithm : ${T(de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm).values()}"
+						th:each="algorithm : ${T(de.rwth.i9.simt.ke.lib.constants.KeyphraseExtractionAlgorithm).values()}"
 						th:value="${algorithm}" th:text="${algorithm}"></option>
 				</select>
 			</p>
@@ -33,7 +33,7 @@
 				Interest Type Name: <select id="latentInterestType" name="latentInterestType"
 					th:field="*{latentInterestType}">
 					<option
-						th:each="algorithm : ${T(de.rwth.i9.cimt.ke.constants.LatentInterests).values()}"
+						th:each="algorithm : ${T(de.rwth.i9.simt.im.constants.LatentInterests).values()}"
 						th:value="${algorithm}" th:text="${algorithm}"></option>
 				</select>
 			</p>

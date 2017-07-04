@@ -29,7 +29,7 @@
 		<dkpro.jwpl.version>1.1.0</dkpro.jwpl.version>
 		<hibernate.version>4.1.3.Final</hibernate.version>
 		<spring.data.jpa.version>1.9.0.RELEASE</spring.data.jpa.version>
-		<start-class>de.rwth.i9.Simt.im.SimtInterestModellingServiceApplication</start-class>
+		<start-class>de.rwth.i9.simt.im.SimtInterestModellingServiceApplication</start-class>
 	</properties>
 
 	<dependencies>
