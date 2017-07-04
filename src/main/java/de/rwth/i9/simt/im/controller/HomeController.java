@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
-import de.rwth.i9.cimt.ke.lib.model.Keyword;
-import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.simt.im.service.KPExtraction;
 import de.rwth.i9.simt.im.service.eval.AuthorInterestExtractorService;
 import de.rwth.i9.simt.im.service.eval.FScoreComputeService;
@@ -33,6 +31,8 @@ import de.rwth.i9.simt.im.service.eval.RecoService;
 import de.rwth.i9.simt.im.service.eval.SimilarityVector;
 import de.rwth.i9.simt.im.service.eval.SqlCorpusImporter;
 import de.rwth.i9.simt.im.service.topic.TopicalPageRankKPExtraction;
+import de.rwth.i9.simt.ke.lib.model.Keyword;
+import de.rwth.i9.simt.ke.lib.model.Textbody;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 
 @Configuration

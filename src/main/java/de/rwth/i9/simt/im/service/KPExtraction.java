@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm;
-import de.rwth.i9.cimt.ke.lib.model.Keyword;
 import de.rwth.i9.simt.im.service.graph.TextRankKPExtraction;
 import de.rwth.i9.simt.im.service.graph.TopicRankKPExtraction;
 import de.rwth.i9.simt.im.service.topic.CommunityClusterKPExtraction;
 import de.rwth.i9.simt.im.service.topic.KeyClusterKPExtraction;
 import de.rwth.i9.simt.im.service.topic.TopicalPageRankKPExtraction;
+import de.rwth.i9.simt.ke.lib.constants.KeyphraseExtractionAlgorithm;
+import de.rwth.i9.simt.ke.lib.model.Keyword;
 
 @Service("kpExtraction")
 public class KPExtraction {

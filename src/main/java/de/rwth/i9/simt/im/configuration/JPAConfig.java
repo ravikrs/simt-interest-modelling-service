@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = { "de.rwth.i9.simt.ke.repository.**" })
+@EnableJpaRepositories(basePackages = { "de.rwth.i9.simt.im.repository.**" })
 public class JPAConfig {
 	@Bean
 	public DataSource dataSource(Environment env) {

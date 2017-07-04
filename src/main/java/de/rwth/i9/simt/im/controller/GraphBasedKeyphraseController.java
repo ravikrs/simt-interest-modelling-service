@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
-import de.rwth.i9.cimt.ke.lib.model.Keyword;
-import de.rwth.i9.cimt.ke.lib.model.Textbody;
 import de.rwth.i9.simt.im.service.graph.TextRankKPExtraction;
 import de.rwth.i9.simt.im.service.graph.TopicRankKPExtraction;
+import de.rwth.i9.simt.ke.lib.model.Keyword;
+import de.rwth.i9.simt.ke.lib.model.Textbody;
 
 @RestController
 @RequestMapping("/kpextraction/graph")

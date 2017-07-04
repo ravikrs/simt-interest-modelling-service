@@ -11,7 +11,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.rwth.i9.cimt.nlp.util.StemmerEn;
+import de.rwth.i9.simt.nlp.util.StemmerEn;
 
 public class WikipediaUtil {
 	private static final Logger log = LoggerFactory.getLogger(WikipediaUtil.class);

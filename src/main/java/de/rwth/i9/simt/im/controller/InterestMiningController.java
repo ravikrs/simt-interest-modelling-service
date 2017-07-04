@@ -18,10 +18,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
-import de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm;
-import de.rwth.i9.cimt.ke.lib.model.Keyword;
-import de.rwth.i9.cimt.ke.lib.model.Textbody;
-import de.rwth.i9.cimt.ke.lib.util.WordCount;
 import de.rwth.i9.simt.im.constants.AuthorInterestType;
 import de.rwth.i9.simt.im.constants.LatentInterests;
 import de.rwth.i9.simt.im.model.eval.AuthorInterests;
@@ -30,6 +26,10 @@ import de.rwth.i9.simt.im.repository.eval.AuthorInterestsRepository;
 import de.rwth.i9.simt.im.service.semantic.WBConceptMap;
 import de.rwth.i9.simt.im.service.semantic.WikipediaBasedIM;
 import de.rwth.i9.simt.im.service.semantic.WikipediaBasedKE;
+import de.rwth.i9.simt.ke.lib.constants.KeyphraseExtractionAlgorithm;
+import de.rwth.i9.simt.ke.lib.model.Keyword;
+import de.rwth.i9.simt.ke.lib.model.Textbody;
+import de.rwth.i9.simt.ke.lib.util.WordCount;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 

@@ -9,9 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.unsupervised.topicclustering.TopicalPageRank;
-import de.rwth.i9.cimt.ke.lib.model.Keyword;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
+import de.rwth.i9.simt.ke.lib.algorithm.kpextraction.unsupervised.topicclustering.TopicalPageRank;
+import de.rwth.i9.simt.ke.lib.model.Keyword;
+import de.rwth.i9.simt.nlp.opennlp.OpenNLPImplSpring;
 
 @Service("topicalPageRankKPExtraction")
 public class TopicalPageRankKPExtraction {

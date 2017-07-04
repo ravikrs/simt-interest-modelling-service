@@ -1,4 +1,4 @@
-package de.rwth.i9.simt.ke;
+package de.rwth.i9.simt.im;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

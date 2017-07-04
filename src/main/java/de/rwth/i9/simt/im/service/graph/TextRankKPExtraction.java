@@ -9,11 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.textrank.LanguageEnglish;
-import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.textrank.TextRankWordnet;
-import de.rwth.i9.cimt.ke.lib.algorithm.kpextraction.unsupervised.graphranking.TextRank;
-import de.rwth.i9.cimt.ke.lib.model.Keyword;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
+import de.rwth.i9.simt.ke.lib.algorithm.kpextraction.textrank.LanguageEnglish;
+import de.rwth.i9.simt.ke.lib.algorithm.kpextraction.textrank.TextRankWordnet;
+import de.rwth.i9.simt.ke.lib.algorithm.kpextraction.unsupervised.graphranking.TextRank;
+import de.rwth.i9.simt.ke.lib.model.Keyword;
+import de.rwth.i9.simt.nlp.opennlp.OpenNLPImplSpring;
 
 @Service("textRankKPExtraction")
 public class TextRankKPExtraction {
@@ -45,8 +45,8 @@ public class TextRankKPExtraction {
 
 	public List<Keyword> extractKeywordTextRankWordnet(String text, int numKeyword) {
 		List<Keyword> keywords = new ArrayList<>();
-		List<Keyword> totalkeywords = TextRankWordnet.extractKeywordTextRankWordnet(text, openNLPImplSpring, languageEnglish,
-				cimtHome + "/LexSemResources/WordNet3.0", true);
+		List<Keyword> totalkeywords = TextRankWordnet.extractKeywordTextRankWordnet(text, openNLPImplSpring,
+				languageEnglish, cimtHome + "/LexSemResources/WordNet3.0", true);
 		totalkeywords.sort(Keyword.KeywordComparatorDesc);
 		for (Keyword keyword : totalkeywords) {
 			if (keywords.size() >= numKeyword) {

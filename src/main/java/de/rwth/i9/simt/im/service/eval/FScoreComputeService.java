@@ -22,12 +22,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm;
-import de.rwth.i9.cimt.ke.lib.util.WordCount;
 import de.rwth.i9.simt.im.model.eval.Publication;
 import de.rwth.i9.simt.im.model.eval.PublicationKeywords;
 import de.rwth.i9.simt.im.repository.eval.PublicationKeywordsRepository;
 import de.rwth.i9.simt.im.repository.eval.PublicationRepository;
+import de.rwth.i9.simt.ke.lib.constants.KeyphraseExtractionAlgorithm;
+import de.rwth.i9.simt.ke.lib.util.WordCount;
 
 @Service("fScoreComputeService")
 public class FScoreComputeService {

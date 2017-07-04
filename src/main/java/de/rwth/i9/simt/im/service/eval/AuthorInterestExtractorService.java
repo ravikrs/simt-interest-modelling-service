@@ -15,9 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import de.rwth.i9.cimt.ke.lib.constants.KeyphraseExtractionAlgorithm;
-import de.rwth.i9.cimt.ke.lib.util.WordCount;
-import de.rwth.i9.cimt.nlp.opennlp.OpenNLPImplSpring;
 import de.rwth.i9.simt.im.constants.AuthorInterestType;
 import de.rwth.i9.simt.im.model.eval.Author;
 import de.rwth.i9.simt.im.model.eval.AuthorInterests;
@@ -33,6 +30,9 @@ import de.rwth.i9.simt.im.repository.eval.PublicationRepository;
 import de.rwth.i9.simt.im.repository.wikipedia.WikiPagemaplineRepository;
 import de.rwth.i9.simt.im.util.MapSortUtil;
 import de.rwth.i9.simt.im.util.WikipediaUtil;
+import de.rwth.i9.simt.ke.lib.constants.KeyphraseExtractionAlgorithm;
+import de.rwth.i9.simt.ke.lib.util.WordCount;
+import de.rwth.i9.simt.nlp.opennlp.OpenNLPImplSpring;
 import de.tudarmstadt.ukp.wikipedia.api.Wikipedia;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiApiException;
 
