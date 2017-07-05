@@ -181,16 +181,24 @@ public class HomeController {
 			scores.add(score);
 			break;
 		case Reduced:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			score = recoService.computeDefaultorReduced(setA, setB, true);
 			scores.add(score);
 			break;
 		case Parent:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			scores = recoService.computeParent(setA, setB, true);
 			break;
 		case Sibling:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			scores = recoService.computeSibling(setA, setB, true);
 			break;
 		case Descendent:
+			setA = authorInterestExtractorService.getReducedInterestsFromWikipedia(setA);
+			setB = authorInterestExtractorService.getReducedInterestsFromWikipedia(setB);
 			scores = recoService.computeDescendent(setA, setB, true);
 			break;
 		case WikiLink:
